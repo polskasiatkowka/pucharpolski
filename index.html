@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Rozgrywki Młodzik / Młodziczka</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1f6fd9;
+    --dark:#173a57;
+    --bg:#f6f7f9;
+    --card:#ffffff;
+    --accent:#f2632b;
+    --muted:#9aa7b2;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  body{background: linear-gradient(180deg,#0f2940 0%, rgba(15,41,64,0.6) 40%), url('') center/cover no-repeat, var(--bg); margin:0; padding:40px; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1100px; margin:0 auto; background:var(--card); border-radius:18px; padding:26px 28px; box-shadow: 0 8px 30px rgba(7,20,34,0.25); overflow:hidden;}
+  header{display:flex; align-items:center; justify-content:space-between; background:var(--blue); color:white; padding:18px 24px; border-radius:12px; margin:-26px -28px 18px; }
+  .brand{display:flex; align-items:center; gap:16px;}
+  .logo{width:54px; height:54px; border-radius:10px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center;}
+  .logo svg{width:36px; height:36px;}
+  header h1{font-size:26px; margin:0; font-weight:800; letter-spacing:0.6px;}
+  .nav{display:flex; gap:18px; align-items:center;}
+  .btn{background:#fff;color:var(--blue);border-radius:10px;padding:8px 12px;font-weight:600;cursor:pointer;border:none}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  .panel{background:linear-gradient(180deg,#fff,#fbfdff); padding:18px;border-radius:12px; box-shadow:0 3px 10px rgba(12,30,50,0.06);}
+  .table{width:100%; border-collapse:collapse;}
+  .table th{background:rgba(0,0,0,0.04); text-align:left; padding:12px 14px; font-weight:700; color:var(--dark);}
+  .table td{padding:12px 14px; border-top:1px solid #eef2f6; color:var(--dark);}
+  .title{font-size:20px; font-weight:800; color:var(--dark); margin:10px 0 16px;}
+  .term{margin-top:22px; display:grid; grid-template-columns:1fr 260px; gap:18px;}
+  .schedule{border-radius:10px; padding:12px;}
+  .match{display:flex; align-items:center; justify-content:space-between; padding:14px; border:1px solid #eef2f6; border-radius:10px; margin-bottom:10px; background:#fff;}
+  .match .left{display:flex; gap:12px; align-items:center;}
+  .date{width:72px; color:var(--muted); font-weight:700;}
+  .teams{font-weight:700; color:var(--dark);}
+  .result{min-width:70px; text-align:center;}
+  .orange-btn{background:var(--accent); color:white; border:none; border-radius:12px; padding:16px 20px; font-weight:700; cursor:pointer;}
+  .small{font-size:13px; color:var(--muted);}
+  /* login */
+  .login-box{position:fixed; right:18px; top:18px; background:rgba(255,255,255,0.95); padding:10px 12px; border-radius:10px;}
+  .controls{display:flex; gap:8px; align-items:center;}
+  /* mobile */
+  @media (max-width:880px){
+    .grid{grid-template-columns:1fr; }
+    .term{grid-template-columns:1fr;}
+    body{padding:18px;}
+  }
+  .thumb{width:56px; height:44px; object-fit:cover; border-radius:6px; border:1px solid #e6eef6;}
+  .editable{background:transparent; border:none; font-weight:700; text-align:center; width:70px;}
+  input[type=file]{display:none;}
+  .add-form{display:flex; flex-direction:column; gap:8px;}
+  .form-row{display:flex; gap:8px;}
+  .form-row input, .form-row select{padding:8px 10px; border-radius:8px; border:1px solid #e6eef6; flex:1;}
+  .link-small{font-size:13px; color:var(--blue); cursor:pointer; text-decoration:underline;}
+</style>
+</head>
+<body>
+  <div class="wrap" id="app">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden>
+          <!-- simple volleyball svg -->
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="32" cy="32" r="30" stroke="#fff" stroke-width="2"/>
+            <path d="M15 18c8 2 18 2 28 0" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+            <path d="M18 30c10-2 22-2 28 2" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+            <path d="M20 44c8 2 18 2 28 0" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h1>MŁODZIK &nbsp;&nbsp; MŁODZICZKA</h1>
+      </div>
+      <div class="nav">
+        <div class="login-box" id="loginBox">
+          <div id="loginState">
+            <button class="btn" id="loginBtn">Zaloguj</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div class="panel">
+        <div class="title">Tabela - Młodzik</div>
+        <table class="table" id="table-mlodzik" aria-label="Tabela Młodzik">
+          <thead><tr><th>Drużyna</th><th>Mecze</th><th>Wygrane</th><th>Przegrane</th><th>Punkty</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <div class="title">Tabela - Młodziczka</div>
+        <table class="table" id="table-mlodziczka" aria-label="Tabela Młodziczka">
+          <thead><tr><th>Drużyna</th><th>Mecze</th><th>Wygrane</th><th>Przegrane</th><th>Punkty</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="term">
+      <div class="panel schedule">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="title" style="margin:0;">TERMINARZ</div>
+          <div class="small">Edytuj wynik klikając w pole</div>
+        </div>
+
+        <div id="matchesList" style="margin-top:12px;"></div>
+
+        <div style="margin-top:12px;" class="small">Protokół: kliknij miniaturkę, aby otworzyć zdjęcie pełne.</div>
+      </div>
+
+      <aside class="panel" style="display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div style="font-weight:700; margin-bottom:8px;">Dodaj mecz</div>
+          <div class="add-form" id="addForm">
+            <div class="form-row">
+              <input id="dateInput" type="date" />
+              <select id="hostSelect"></select>
+            </div>
+            <div class="form-row">
+              <select id="guestSelect"></select>
+              <input id="resultInput" placeholder="Wynik (np. 2:1)" />
+            </div>
+            <div>
+              <label class="btn" for="fileInput">Dodaj protokół</label>
+              <input id="fileInput" type="file" accept="image/*" />
+              <span id="fileName" class="small" style="margin-left:8px;"></span>
+            </div>
+            <div style="margin-top:10px;">
+              <button class="orange-btn" id="addMatchBtn">Dodaj mecz</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:18px;">
+          <div style="font-size:13px; color:var(--muted); margin-bottom:8px;">Panel admina</div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn" id="refreshBtn">Odśwież</button>
+            <button class="btn" id="exportBtn">Pobierz arkusz</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+  </div>
+
+  <!-- login modal -->
+  <div id="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); align-items:center; justify-content:center;">
+    <div style="background:white; padding:20px; width:320px; border-radius:10px;">
+      <div style="font-weight:800; margin-bottom:10px;">Logowanie administratora</div>
+      <input id="adminPwd" type="password" placeholder="Hasło admina" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid #e6eef6;" />
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button class="btn" id="cancelLogin">Anuluj</button>
+        <button class="orange-btn" id="doLogin">Zaloguj</button>
+      </div>
+      <div id="loginMsg" style="margin-top:8px; color:#d44;"></div>
+    </div>
+  </div>
+
+<script>
+/* === KONFIGURACJA: podstaw do wdrożenia ===
+  1) PODMIEN NA SWÓJ URL: API_URL = 'https://script.google.com/macros/s/XXX/exec'
+  2) Hasło admina zostaw puste tu - użytkownik je wpisze przy logowaniu.
+*/
+const API_URL = 'REPLACE_WITH_YOUR_APPS_SCRIPT_WEBAPP_URL'; // <-- podmienić po wdrożeniu Apps Script
+
+// ---------- Stan aplikacji ----------
+let isAdmin = false;
+let adminToken = ''; // hasło, które użytkownik wpisuje (wysyłane do API przy operacjach wymagających uprawnień)
+
+// ---------- DOM ----------
+const loginBtn = document.getElementById('loginBtn');
+const modal = document.getElementById('modal');
+const doLogin = document.getElementById('doLogin');
+const cancelLogin = document.getElementById('cancelLogin');
+const adminPwd = document.getElementById('adminPwd');
+const loginMsg = document.getElementById('loginMsg');
+const loginState = document.getElementById('loginState');
+
+const matchesList = document.getElementById('matchesList');
+const tableMlodzik = document.querySelector('#table-mlodzik tbody');
+const tableMlodziczka = document.querySelector('#table-mlodziczka tbody');
+
+const hostSelect = document.getElementById('hostSelect');
+const guestSelect = document.getElementById('guestSelect');
+const dateInput = document.getElementById('dateInput');
+const resultInput = document.getElementById('resultInput');
+const fileInput = document.getElementById('fileInput');
+const fileName = document.getElementById('fileName');
+const addMatchBtn = document.getElementById('addMatchBtn');
+const refreshBtn = document.getElementById('refreshBtn');
+const exportBtn = document.getElementById('exportBtn');
+
+loginBtn.addEventListener('click', ()=>{ modal.style.display='flex'; });
+cancelLogin.addEventListener('click', ()=>{ modal.style.display='none'; adminPwd.value=''; loginMsg.textContent=''; });
+doLogin.addEventListener('click', async ()=>{
+  const pwd = adminPwd.value.trim();
+  if(!pwd){ loginMsg.textContent='Wpisz hasło'; return; }
+  // test password by calling API /action=auth
+  try{
+    const res = await fetch(API_URL + '?action=auth', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ password: pwd })
+    });
+    const j = await res.json();
+    if(j && j.ok){
+      isAdmin = true; adminToken = pwd;
+      modal.style.display='none'; adminPwd.value='';
+      loginState.innerHTML = '<div style="display:flex; gap:10px; align-items:center;"><div style="font-weight:700">Zalogowany</div><button class="btn" id="logoutBtn">Wyloguj</button></div>';
+      document.getElementById('logoutBtn').addEventListener('click', ()=>{ isAdmin=false; adminToken=''; loginState.innerHTML = '<button class="btn" id="loginBtn2">Zaloguj</button>'; document.getElementById('loginBtn2').addEventListener('click', ()=>{ modal.style.display='flex'; }); });
+    } else {
+      loginMsg.textContent = 'Nieprawidłowe hasło';
+    }
+  }catch(e){ loginMsg.textContent='Błąd połączenia'; console.error(e) }
+});
+
+fileInput.addEventListener('change', ()=>{
+  if(fileInput.files && fileInput.files.length) fileName.textContent = fileInput.files[0].name;
+  else fileName.textContent = '';
+});
+
+// ---------- helpers ----------
+function el(tag, props={}, children=[]){
+  const e = document.createElement(tag);
+  Object.assign(e, props);
+  (Array.isArray(children)?children:[children]).forEach(c=>{ if(typeof c === 'string') e.appendChild(document.createTextNode(c)); else if(c) e.appendChild(c); });
+  return e;
+}
+
+async function fetchData(){
+  try{
+    const res = await fetch(API_URL + '?action=get', { method:'GET' });
+    const j = await res.json();
+    renderAll(j);
+  }catch(err){
+    console.error('fetchData error', err);
+  }
+}
+
+function renderAll(data){
+  // oczyszczanie
+  tableMlodzik.innerHTML=''; tableMlodziczka.innerHTML=''; matchesList.innerHTML=''; hostSelect.innerHTML=''; guestSelect.innerHTML='';
+  // wypełnij tabele
+  const teamsM = (data.Tabela_Mlodzik && data.Tabela_Mlodzik.rows) || [];
+  const teamsF = (data.Tabela_Mlodziczka && data.Tabela_Mlodziczka.rows) || [];
+  const terminarz = (data.Terminarz && data.Terminarz.rows) || [];
+
+  teamsM.forEach(r=>{
+    const tr = el('tr',{},[
+      el('td',{}, r[0] || ''),
+      el('td',{}, r[1] || ''),
+      el('td',{}, r[2] || ''),
+      el('td',{}, r[3] || ''),
+      el('td',{}, r[4] || '')
+    ]);
+    tableMlodzik.appendChild(tr);
+    addOption(hostSelect, r[0]); addOption(guestSelect, r[0]);
+  });
+  teamsF.forEach(r=>{
+    const tr = el('tr',{},[
+      el('td',{}, r[0] || ''),
+      el('td',{}, r[1] || ''),
+      el('td',{}, r[2] || ''),
+      el('td',{}, r[3] || ''),
+      el('td',{}, r[4] || '')
+    ]);
+    tableMlodziczka.appendChild(tr);
+    // jeżeli drużyny takie same jak M, avoid dup - but it's okay to duplicate
+  });
+
+  // terminarz
+  terminarz.forEach((row, idx)=>{
+    // row: [data, host, guest, wynik, link]
+    const date = row[0] || '';
+    const host = row[1] || '';
+    const guest = row[2] || '';
+    const wyn = row[3] || '';
+    const link = row[4] || '';
+
+    const match = el('div',{className:'match'}, [
+      el('div',{className:'left'}, [
+        el('div',{className:'date'}, date),
+        el('div', {className:'teams'}, host + '  vs  ' + guest)
+      ]),
+      el('div',{className:'right', style:'display:flex;gap:10px;align-items:center;'}, [
+        // wynik (edytowalny)
+        (()=>{ const input = el('input',{className:'editable', value: wyn, title:'Kliknij aby edytować wynik'}); input.addEventListener('change', ()=>updateResult(idx+1, input.value)); return input })(),
+        // podgląd protokołu
+        (()=>{ const thumb = el('img',{className:'thumb', src: link || '', alt:'', style:link? '':'display:none;cursor:pointer'}); if(link) thumb.addEventListener('click', ()=>window.open(link,'_blank')); return thumb })(),
+        (()=>{ const up = el('label',{className:'btn', title:'Dodaj protokół'}); up.textContent='Protokół'; const file = el('input',{type:'file', accept:'image/*'}); file.addEventListener('change', async (e)=>{ await uploadProtocol(idx+1, e.target.files[0]); }); up.appendChild(file); return up })()
+      ])
+    ]);
+    matchesList.appendChild(match);
+  });
+}
+
+/* add option to selects, avoid duplicates */
+function addOption(sel, text){
+  if(!text) return;
+  for(let i=0;i<sel.options.length;i++){ if(sel.options[i].value === text) return; }
+  const opt = document.createElement('option'); opt.value = text; opt.text = text; sel.add(opt);
+}
+
+/* Add match - create record in sheet via API */
+addMatchBtn.addEventListener('click', async ()=>{
+  const date = dateInput.value;
+  const host = hostSelect.value;
+  const guest = guestSelect.value;
+  const result = resultInput.value.trim();
+  if(!date || !host || !guest){ alert('Wypełnij datę, gospodarza i gościa'); return; }
+  let fileBase64 = null;
+  if(fileInput.files && fileInput.files.length){
+    const f = fileInput.files[0];
+    fileBase64 = await toBase64(f);
+  }
+  const payload = {
+    action:'addMatch',
+    data:{ date, host, guest, result },
+    image: fileBase64,
+    filename: fileInput.files && fileInput.files[0] ? fileInput.files[0].name : null,
+    admin: adminToken
+  };
+  try{
+    const res = await fetch(API_URL + '?action=addMatch', { method:'POST', body: JSON.stringify(payload), headers:{'Content-Type':'application/json'}});
+    const j = await res.json();
+    if(j && j.ok){ alert('Mecz dodany'); resetAddForm(); fetchData(); } else { alert('Błąd: ' + (j && j.error ? j.error : 'nieznany')); }
+  }catch(e){ console.error(e); alert('Błąd połączenia'); }
+});
+
+function resetAddForm(){ dateInput.value=''; resultInput.value=''; fileInput.value=''; fileName.textContent=''; }
+
+/* update result for given row number (1-based index) */
+async function updateResult(rowIndex, newResult){
+  if(!isAdmin){ alert('Tylko admin może aktualizować wyniki. Zaloguj się.'); return; }
+  const payload = { action:'updateResult', row: rowIndex, result: newResult, admin: adminToken };
+  try{
+    const res = await fetch(API_URL + '?action=updateResult', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const j = await res.json();
+    if(j && j.ok){ fetchData(); } else alert('Błąd aktualizacji: ' + (j && j.error ? j.error : '')); 
+  }catch(e){ console.error(e); alert('Błąd połączenia'); }
+}
+
+/* upload protocol for given row index */
+async function uploadProtocol(rowIndex, file){
+  if(!isAdmin){ alert('Tylko admin może dodawać protokoły. Zaloguj się.'); return; }
+  if(!file) return;
+  const b64 = await toBase64(file);
+  const payload = { action:'uploadProtocol', row: rowIndex, filename: file.name, image: b64, admin: adminToken };
+  try{
+    const res = await fetch(API_URL + '?action=uploadProtocol', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const j = await res.json();
+    if(j && j.ok){ alert('Protokół zapisany'); fetchData(); } else alert('Błąd uploadu: ' + (j && j.error ? j.error : ''));
+  }catch(e){ console.error(e); alert('Błąd połączenia'); }
+}
+
+/* convert file -> base64 (dataURL) */
+function toBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = ()=>resolve(r.result.split(',')[1]); // returns only base64 part
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+/* refresh & export */
+refreshBtn.addEventListener('click', ()=>fetchData());
+exportBtn.addEventListener('click', ()=>{ window.open(API_URL + '?action=export', '_blank'); });
+
+/* initial load */
+(function init(){
+  // if API_URL not set -> show message
+  if(API_URL.includes('REPLACE_WITH')) {
+    matchesList.innerHTML = '<div style="padding:12px; color:#c33">Ustaw adres Apps Script (API_URL) w pliku index.html po wdrożeniu skryptu.</div>';
+  } else {
+    fetchData();
+  }
+  // populate example teams (client-side) until real data loads
+  const exampleTeams = ['Drużyna A','Drużyna B','Drużyna C','Drużyna D'];
+  exampleTeams.forEach(t=>{ addOption(hostSelect,t); addOption(guestSelect,t) });
+})();
+</script>
+</body>
+</html>
