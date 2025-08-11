@@ -2,145 +2,217 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Terminarz i Tabela</title>
-<link rel="stylesheet" href="style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tabela i terminarz</title>
 <style>
-#loginPanel { margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; width: 300px; }
-#loginPanel input { margin-right: 5px; }
-#loginStatus { font-weight: bold; margin-top: 5px; }
-.hidden { display: none; }
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: url('https://upload.wikimedia.org/wikipedia/commons/5/51/Volleyball_court_background.jpg') no-repeat center center/cover;
+    }
+    .container {
+        max-width: 900px;
+        margin: 30px auto;
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    header {
+        background: #1d5ea8;
+        color: white;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    header h1 {
+        margin: 0;
+        font-size: 22px;
+        display: flex;
+        gap: 20px;
+    }
+    header button {
+        background: white;
+        border: none;
+        color: #1d5ea8;
+        font-weight: bold;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    .tables {
+        display: flex;
+        gap: 20px;
+        padding: 20px;
+        flex-wrap: wrap;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 200px;
+        background: #f8f8f8;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    th, td {
+        padding: 8px 12px;
+        border-bottom: 1px solid #ddd;
+        text-align: center;
+    }
+    th {
+        background: #ececec;
+    }
+    h2 {
+        padding: 0 20px;
+    }
+    .schedule {
+        padding: 0 20px 20px;
+    }
+    .match {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid #ddd;
+    }
+    .add-match {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .add-match input {
+        padding: 5px;
+        flex: 1;
+    }
+    .add-match button {
+        background: #f26522;
+        border: none;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+    }
 </style>
 </head>
 <body>
 
-<h1>Terminarz i Tabela</h1>
+<div class="container">
+    <header>
+        <h1>
+            <span>MŁODZIK</span>
+            <span>MŁODZICZKA</span>
+        </h1>
+        <button onclick="login()">Zaloguj</button>
+    </header>
 
-<!-- PANEL LOGOWANIA -->
-<div id="loginPanel">
-    <h3>Logowanie admina</h3>
-    <input type="password" id="adminPass" placeholder="Hasło">
-    <button id="loginBtn">Zaloguj</button>
-    <div id="loginStatus"></div>
+    <div class="tables">
+        <table id="table1">
+            <tr><th>Drużyna</th><th>Mecze</th><th>Wygrane</th><th>Przegrane</th></tr>
+        </table>
+        <table id="table2">
+            <tr><th>Drużyna</th><th>Mecze</th><th>Wygrane</th><th>Punkty</th></tr>
+        </table>
+    </div>
+
+    <h2>TERMINARZ</h2>
+    <div class="schedule" id="schedule"></div>
+
+    <div class="schedule">
+        <div class="add-match">
+            <input type="text" id="matchDate" placeholder="Data (DD.MM)">
+            <input type="text" id="team1" placeholder="Drużyna 1">
+            <input type="text" id="team2" placeholder="Drużyna 2">
+            <button onclick="addMatch()">Dodaj mecz</button>
+        </div>
+    </div>
 </div>
 
-<section>
-    <h2>Tabela — Młodzik</h2>
-    <table id="tabela-mlodzik">
-        <thead>
-            <tr>
-                <th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-</section>
-
-<section>
-    <h2>Tabela — Młodziczka</h2>
-    <table id="tabela-mlodziczka">
-        <thead>
-            <tr>
-                <th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-</section>
-
-<!-- FORMULARZ TYLKO DLA ZALOGOWANYCH -->
-<section id="addMatchSection" class="hidden">
-    <h2>Dodaj mecz</h2>
-    <form id="meczForm">
-        <label>Data: <input type="date" name="data" required></label>
-        <label>Gospodarz: <input type="text" name="gospodarz" required></label>
-        <label>Gość: <input type="text" name="gosc" required></label>
-        <label>Wynik: <input type="text" name="wynik" placeholder="np. 3:2" required></label>
-        <label>Protokół: <input type="file" name="plik" accept="image/*"></label>
-        <button type="submit">Zapisz mecz</button>
-    </form>
-</section>
-
-<section>
-    <h2>Terminarz</h2>
-    <table id="terminarz">
-        <thead>
-            <tr>
-                <th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Protokół</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-</section>
-
 <script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyl106GXSzKOMWjI7cJ46mbzv-7Q-nMKPv0VZKBYrL_-V9PcV6jFqqwGL-jLx_7-1TE/exec"; // <- Wstaw swój link /exec
-let isLoggedIn = false;
-let adminPassword = "";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyl106GXSzKOMWjI7cJ46mbzv-7Q-nMKPv0VZKBYrL_-V9PcV6jFqqwGL-jLx_7-1TE/exec";
 
-// Ładowanie danych
-async function ladujDane() {
-    let res = await fetch(WEB_APP_URL + "?action=get");
-    let data = await res.json();
+async function fetchData() {
+    const res = await fetch(WEB_APP_URL + "?action=get");
+    const data = await res.json();
 
-    const t1 = document.querySelector("#tabela-mlodzik tbody");
-    t1.innerHTML = "";
-    data.tabela_mlodzik.forEach(row => {
-        t1.innerHTML += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td></tr>`;
-    });
+    // Przykład danych — musisz dopasować do formatu z Apps Script
+    const teams1 = [
+        ["Drużyna A", 3, 3, 0],
+        ["Drużyna B", 3, 2, 1],
+        ["Drużyna C", 3, 1, 2],
+        ["Drużyna D", 3, 0, 3],
+    ];
+    const teams2 = [
+        ["Drużyna A", 3, 0, 9],
+        ["Drużyna B", 2, 1, 6],
+        ["Drużyna C", 1, 2, 3],
+        ["Drużyna D", 0, 3, 0],
+    ];
+    const matches = [
+        ["01.05", "Drużyna A", "Drużyna C"],
+        ["02.05", "Drużyna B", "Drużyna D"],
+        ["03.05", "Drużyna A", "Drużyna B"],
+    ];
 
-    const t2 = document.querySelector("#tabela-mlodziczka tbody");
-    t2.innerHTML = "";
-    data.tabela_mlodziczka.forEach(row => {
-        t2.innerHTML += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td></tr>`;
-    });
+    fillTable("table1", teams1);
+    fillTable("table2", teams2);
+    fillSchedule(matches);
+}
 
-    const t3 = document.querySelector("#terminarz tbody");
-    t3.innerHTML = "";
-    data.terminarz.forEach(row => {
-        let protokol = row[4] ? `<a href="${row[4]}" target="_blank">Zobacz</a>` : "";
-        t3.innerHTML += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${protokol}</td></tr>`;
+function fillTable(id, rows) {
+    const table = document.getElementById(id);
+    rows.forEach(r => {
+        const tr = document.createElement("tr");
+        r.forEach(cell => {
+            const td = document.createElement("td");
+            td.textContent = cell;
+            tr.appendChild(td);
+        });
+        table.appendChild(tr);
     });
 }
 
-// Obsługa logowania
-document.getElementById("loginBtn").addEventListener("click", async () => {
-    const pass = document.getElementById("adminPass").value.trim();
-    if(!pass) return alert("Podaj hasło");
-
-    let res = await fetch(WEB_APP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "auth", password: pass })
+function fillSchedule(matches) {
+    const schedule = document.getElementById("schedule");
+    schedule.innerHTML = "";
+    matches.forEach(m => {
+        const div = document.createElement("div");
+        div.className = "match";
+        div.textContent = `${m[0]}  ${m[1]} vs ${m[2]}`;
+        schedule.appendChild(div);
     });
+}
 
-    let out = await res.json();
-    if(out.ok){
-        isLoggedIn = true;
-        adminPassword = pass;
-        document.getElementById("addMatchSection").classList.remove("hidden");
-        document.getElementById("loginStatus").textContent = "✅ Zalogowano";
-    } else {
-        document.getElementById("loginStatus").textContent = "❌ Błędne hasło";
+async function addMatch() {
+    const date = document.getElementById("matchDate").value;
+    const t1 = document.getElementById("team1").value;
+    const t2 = document.getElementById("team2").value;
+
+    if(!date || !t1 || !t2) return alert("Wypełnij wszystkie pola!");
+
+    await fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "addMatch", date, team1: t1, team2: t2 }),
+        headers: { "Content-Type": "application/json" }
+    });
+    fetchData();
+}
+
+function login() {
+    const pass = prompt("Podaj hasło:");
+    if(pass) {
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "auth", password: pass }),
+            headers: { "Content-Type": "application/json" }
+        }).then(r => r.json()).then(d => {
+            if(d.ok) alert("Zalogowano pomyślnie");
+            else alert("Błędne hasło");
+        });
     }
-});
+}
 
-// Obsługa formularza dodawania meczu
-document.getElementById("meczForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    if(!isLoggedIn) return alert("Musisz być zalogowany");
-
-    let formData = new FormData(e.target);
-    formData.append("action", "addMatch");
-    formData.append("password", adminPassword);
-
-    let res = await fetch(WEB_APP_URL, { method: "POST", body: formData });
-    let out = await res.text();
-    alert(out);
-    ladujDane();
-});
-
-ladujDane();
+fetchData();
 </script>
-
 </body>
 </html>
