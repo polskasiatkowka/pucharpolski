@@ -4,21 +4,31 @@
 <meta charset="UTF-8">
 <title>Terminarz i Tabela</title>
 <link rel="stylesheet" href="style.css">
+<style>
+#loginPanel { margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; width: 300px; }
+#loginPanel input { margin-right: 5px; }
+#loginStatus { font-weight: bold; margin-top: 5px; }
+.hidden { display: none; }
+</style>
 </head>
 <body>
 
 <h1>Terminarz i Tabela</h1>
+
+<!-- PANEL LOGOWANIA -->
+<div id="loginPanel">
+    <h3>Logowanie admina</h3>
+    <input type="password" id="adminPass" placeholder="Hasło">
+    <button id="loginBtn">Zaloguj</button>
+    <div id="loginStatus"></div>
+</div>
 
 <section>
     <h2>Tabela — Młodzik</h2>
     <table id="tabela-mlodzik">
         <thead>
             <tr>
-                <th>Drużyna</th>
-                <th>M</th>
-                <th>W</th>
-                <th>P</th>
-                <th>Pkt</th>
+                <th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -30,18 +40,15 @@
     <table id="tabela-mlodziczka">
         <thead>
             <tr>
-                <th>Drużyna</th>
-                <th>M</th>
-                <th>W</th>
-                <th>P</th>
-                <th>Pkt</th>
+                <th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th>
             </tr>
         </thead>
         <tbody></tbody>
     </table>
 </section>
 
-<section>
+<!-- FORMULARZ TYLKO DLA ZALOGOWANYCH -->
+<section id="addMatchSection" class="hidden">
     <h2>Dodaj mecz</h2>
     <form id="meczForm">
         <label>Data: <input type="date" name="data" required></label>
@@ -58,11 +65,7 @@
     <table id="terminarz">
         <thead>
             <tr>
-                <th>Data</th>
-                <th>Gospodarz</th>
-                <th>Gość</th>
-                <th>Wynik</th>
-                <th>Protokół</th>
+                <th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Protokół</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -70,13 +73,15 @@
 </section>
 
 <script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz7xfcQp9MxPOXFbFZy8NuIFG6iZvl4Pw3SxNiC8Y73PG1qGQ3YOcwIc1JEpp8M9UTh/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyl106GXSzKOMWjI7cJ46mbzv-7Q-nMKPv0VZKBYrL_-V9PcV6jFqqwGL-jLx_7-1TE/exec"; // <- Wstaw swój link /exec
+let isLoggedIn = false;
+let adminPassword = "";
 
+// Ładowanie danych
 async function ladujDane() {
-    let res = await fetch(WEB_APP_URL + "?action=getData");
+    let res = await fetch(WEB_APP_URL + "?action=get");
     let data = await res.json();
 
-    // Tabele
     const t1 = document.querySelector("#tabela-mlodzik tbody");
     t1.innerHTML = "";
     data.tabela_mlodzik.forEach(row => {
@@ -89,7 +94,6 @@ async function ladujDane() {
         t2.innerHTML += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td></tr>`;
     });
 
-    // Terminarz
     const t3 = document.querySelector("#terminarz tbody");
     t3.innerHTML = "";
     data.terminarz.forEach(row => {
@@ -98,10 +102,36 @@ async function ladujDane() {
     });
 }
 
+// Obsługa logowania
+document.getElementById("loginBtn").addEventListener("click", async () => {
+    const pass = document.getElementById("adminPass").value.trim();
+    if(!pass) return alert("Podaj hasło");
+
+    let res = await fetch(WEB_APP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "auth", password: pass })
+    });
+
+    let out = await res.json();
+    if(out.ok){
+        isLoggedIn = true;
+        adminPassword = pass;
+        document.getElementById("addMatchSection").classList.remove("hidden");
+        document.getElementById("loginStatus").textContent = "✅ Zalogowano";
+    } else {
+        document.getElementById("loginStatus").textContent = "❌ Błędne hasło";
+    }
+});
+
+// Obsługa formularza dodawania meczu
 document.getElementById("meczForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+    if(!isLoggedIn) return alert("Musisz być zalogowany");
+
     let formData = new FormData(e.target);
     formData.append("action", "addMatch");
+    formData.append("password", adminPassword);
 
     let res = await fetch(WEB_APP_URL, { method: "POST", body: formData });
     let out = await res.text();
