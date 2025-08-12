@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tabele i Terminarz – siatkówka</title>
-
 <style>
   :root{
     --pzps-blue:#0d3b66;
@@ -15,33 +14,58 @@
     --win:#e7f6ec;
     --loss:#fdecec;
   }
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:#f2f5f9;}
-  header.site-header{background:var(--pzps-blue);color:#fff;padding:18px 16px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
-  .site-header .wrap{max-width:1100px;margin:0 auto;display:flex;gap:16px;align-items:center;justify-content:space-between;}
-  .site-title{margin:0;font-weight:700;letter-spacing:.3px;font-size:clamp(18px,2.3vw,24px);}
-  .container{max-width:1100px;margin:28px auto;padding:0 16px;}
-  .card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 6px 18px rgba(13,59,102,.08);margin-bottom:20px;border:1px solid #e8edf3;}
-  .card-header{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#114676 0%,#0d3b66 100%);color:#fff;padding:14px 16px;border-bottom:3px solid var(--pzps-gold);}
-  .card-header h2{margin:0;font-size:clamp(16px,2vw,20px);font-weight:700;}
-  .card-body{padding:12px 14px;}
-  .note{color:var(--muted);font-size:13px;margin:4px 0 10px;}
-  .table-wrap{overflow-x:auto;}
-  table.pzps{width:100%;border-collapse:collapse;min-width:560px;}
-  table.pzps thead th{text-align:center;font-weight:700;color:#fff;background:var(--pzps-blue);padding:10px 8px;position:sticky;top:0;z-index:1;}
-  table.pzps tbody td{padding:10px 8px;text-align:center;border-bottom:1px solid #eef2f6;}
-  table.pzps tbody tr:nth-child(even){background:var(--row-alt);}
-  .chip{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;line-height:1;border:1px solid transparent;}
-  .chip-cat{background:#f9fafb;color:#334155;border-color:#e5e7eb;}
-  .chip-win{background:var(--win);color:#14532d;border-color:#c8e8d3;}
-  .chip-loss{background:var(--loss);color:#7f1d1d;border-color:#f6c7c7;}
-  .muted{color:var(--muted);}
-  tr.win-row{background:var(--win) !important;}
-  tr.loss-row{background:var(--loss) !important;}
-  @media (max-width:640px){
-    .card-body{padding:10px 8px;}
-    table.pzps{min-width:520px;}
-    table.pzps thead th, table.pzps tbody td{padding:8px 6px;font-size:14px;}
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    color:var(--text);
+    background:#f2f5f9;
   }
+  header.site-header{
+    background:var(--pzps-blue);
+    color:#fff;
+    padding:18px 16px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+  }
+  .site-header .wrap{
+    max-width:1100px; margin:0 auto;
+  }
+  .site-title{
+    margin:0; font-weight:700; font-size: clamp(18px,2.3vw,24px);
+  }
+  .container{ max-width:1100px; margin:28px auto; padding:0 16px; }
+  .card{
+    background:#fff; border-radius:12px; overflow:hidden;
+    box-shadow:0 6px 18px rgba(13,59,102,.08);
+    margin-bottom:20px;
+    border:1px solid #e8edf3;
+  }
+  .card-header{
+    background:linear-gradient(180deg, #114676 0%, #0d3b66 100%);
+    color:#fff; padding:14px 16px; border-bottom:3px solid var(--pzps-gold);
+  }
+  .card-header h2{ margin:0; font-size: clamp(16px,2vw,20px); }
+  .card-body{ padding:12px 14px; }
+  .note{ color:var(--muted); font-size:13px; margin-top:8px; }
+  .table-wrap{ overflow-x:auto; }
+  table.pzps{
+    width:100%; border-collapse:collapse; min-width:560px;
+  }
+  table.pzps thead th{
+    text-align:center; font-weight:700; color:#fff; background:var(--pzps-blue);
+    padding:10px 8px;
+  }
+  table.pzps tbody td{
+    padding:10px 8px; text-align:center; border-bottom:1px solid #eef2f6;
+  }
+  table.pzps tbody tr:nth-child(even){ background:var(--row-alt); }
+  .chip{
+    display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid transparent;
+  }
+  .chip-cat{ background:#f9fafb; color:#334155; border-color:#e5e7eb; }
+  .chip-win{ background:var(--win); color:#14532d; border-color:#c8e8d3; }
+  .chip-loss{ background:var(--loss); color:#7f1d1d; border-color:#f6c7c7; }
+  tr.win-row   { background:var(--win) !important; }
+  tr.loss-row  { background:var(--loss) !important; }
 </style>
 </head>
 <body>
@@ -53,19 +77,15 @@
 </header>
 
 <main class="container">
-
   <section class="card">
     <div class="card-header"><h2>MŁODZIK</h2></div>
     <div class="card-body">
       <div class="table-wrap">
         <table class="pzps" id="tbl-mlodzik">
-          <thead>
-            <tr><th style="text-align:left;padding-left:12px;">Drużyna</th><th>M</th><th>W</th><th>P</th><th>Małe pkt</th><th>Punkty</th></tr>
-          </thead>
+          <thead><tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Małe pkt</th><th>Punkty</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
-      <div class="note">Klasyfikacja: 3:0/3:1 → 3 pkt, 3:2 → 2 pkt, przegrany 3:2 → 1 pkt.</div>
     </div>
   </section>
 
@@ -74,13 +94,10 @@
     <div class="card-body">
       <div class="table-wrap">
         <table class="pzps" id="tbl-mlodziczka">
-          <thead>
-            <tr><th style="text-align:left;padding-left:12px;">Drużyna</th><th>M</th><th>W</th><th>P</th><th>Małe pkt</th><th>Punkty</th></tr>
-          </thead>
+          <thead><tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Małe pkt</th><th>Punkty</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
-      <div class="note">Przy równej liczbie punktów decydują małe punkty.</div>
     </div>
   </section>
 
@@ -89,93 +106,87 @@
     <div class="card-body">
       <div class="table-wrap">
         <table class="pzps" id="tbl-terminarz">
-          <thead>
-            <tr><th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Sety</th><th>Kategoria</th></tr>
-          </thead>
+          <thead><tr><th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Sety</th><th>Kategoria</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
     </div>
   </section>
-
 </main>
 
 <script>
-  const WEB_APP_URL = "https://corsproxy.io/?" + encodeURIComponent("https://script.google.com/macros/s/AKfycbzIal6dx2SplkFiu3XD5Sqi0ceApL_ncn95iCHLd4rik1-2xg8nZ627RTZjjPs47_ZttQ/exec");
+const WEB_APP_URL = "https://corsproxy.io/?" + encodeURIComponent(
+  "https://script.google.com/macros/s/AKfycbzIal6dx2SplkFiu3XD5Sqi0ceApL_ncn95iCHLd4rik1-2xg8nZ627RTZjjPs47_ZttQ/exec?action=get"
+);
 
-  function parseDateAny(v){
-    if (v instanceof Date && !isNaN(v)) return v;
-    if (typeof v === 'number') return new Date(v);
-    if (typeof v === 'string' && v.includes('.')){
-      const [d,m,y] = v.split('.').map(Number);
-      if (!isNaN(d) && !isNaN(m) && !isNaN(y)) return new Date(y, m-1, d);
+function createCell(text, opts={}) {
+  const td = document.createElement('td');
+  if (opts.left) td.style.textAlign = 'left';
+  td.textContent = text ?? '';
+  return td;
+}
+
+function chip(text, cls) {
+  const span = document.createElement('span');
+  span.className = `chip ${cls}`;
+  span.textContent = text;
+  return span;
+}
+
+async function loadData(){
+  const res = await fetch(WEB_APP_URL, { cache:'no-store' });
+  const data = await res.json();
+
+  // Młodzik
+  const tbM = document.querySelector('#tbl-mlodzik tbody');
+  tbM.innerHTML = '';
+  data.tabela_mlodzik.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.appendChild(createCell(row.team, {left:true}));
+    tr.appendChild(createCell(row.matches));
+    tr.appendChild(createCell(row.wins));
+    tr.appendChild(createCell(row.losses));
+    tr.appendChild(createCell(row.smallPoints));
+    tr.appendChild(createCell(row.scoreTable));
+    tbM.appendChild(tr);
+  });
+
+  // Młodziczka
+  const tbF = document.querySelector('#tbl-mlodziczka tbody');
+  tbF.innerHTML = '';
+  data.tabela_mlodziczka.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.appendChild(createCell(row.team, {left:true}));
+    tr.appendChild(createCell(row.matches));
+    tr.appendChild(createCell(row.wins));
+    tr.appendChild(createCell(row.losses));
+    tr.appendChild(createCell(row.smallPoints));
+    tr.appendChild(createCell(row.scoreTable));
+    tbF.appendChild(tr);
+  });
+
+  // Terminarz
+  const tbT = document.querySelector('#tbl-terminarz tbody');
+  tbT.innerHTML = '';
+  data.terminarz.forEach(row => {
+    const tr = document.createElement('tr');
+    const [date, home, away, score, sets, cat] = row;
+    if (score && score.includes(':')) {
+      const [sH, sA] = score.split(':').map(Number);
+      if (sH > sA) tr.classList.add('win-row');
+      if (sH < sA) tr.classList.add('loss-row');
     }
-    const dt = new Date(v);
-    return isNaN(dt) ? null : dt;
-  }
-  function fmtDatePL(v){const d=parseDateAny(v);return d?d.toLocaleDateString('pl-PL'):(v??'');}
+    tr.appendChild(createCell(date));
+    tr.appendChild(createCell(home));
+    tr.appendChild(createCell(away));
+    tr.appendChild(createCell(score));
+    tr.appendChild(createCell(sets));
+    tr.appendChild(createCell(cat));
+    tbT.appendChild(tr);
+  });
+}
 
-  async function loadData(){
-    const res = await fetch(WEB_APP_URL + "?action=get", { cache:'no-store' });
-    const data = await res.json();
-
-    const tbM = document.querySelector('#tbl-mlodzik tbody');
-    tbM.innerHTML = '';
-    data.tabela_mlodzik.forEach(row=>{
-      tbM.innerHTML += `<tr>
-        <td style="text-align:left;">${row.team}</td>
-        <td>${row.matches}</td>
-        <td>${row.wins}</td>
-        <td>${row.losses}</td>
-        <td>${row.smallPoints}</td>
-        <td>${row.scoreTable}</td>
-      </tr>`;
-    });
-
-    const tbF = document.querySelector('#tbl-mlodziczka tbody');
-    tbF.innerHTML = '';
-    data.tabela_mlodziczka.forEach(row=>{
-      tbF.innerHTML += `<tr>
-        <td style="text-align:left;">${row.team}</td>
-        <td>${row.matches}</td>
-        <td>${row.wins}</td>
-        <td>${row.losses}</td>
-        <td>${row.smallPoints}</td>
-        <td>${row.scoreTable}</td>
-      </tr>`;
-    });
-
-    const tbT = document.querySelector('#tbl-terminarz tbody');
-    tbT.innerHTML = '';
-    const list = (data.terminarz||[]).slice().sort((a,b)=>{
-      const hasA=!!a?.[3], hasB=!!b?.[3];
-      if (hasA!==hasB) return hasA-hasB;
-      const dA=parseDateAny(a?.[0]), dB=parseDateAny(b?.[0]);
-      return (dA?.getTime()||0)-(dB?.getTime()||0);
-    });
-    list.forEach(row=>{
-      const [rawDate, home, away, score, sets, cat] = row;
-      const tr = document.createElement('tr');
-      if (score && score.includes(':')){
-        const [sH, sA] = score.split(':').map(n=>parseInt(n,10));
-        if (!isNaN(sH) && !isNaN(sA)){
-          if (sH>sA) tr.classList.add('win-row');
-          else if (sH<sA) tr.classList.add('loss-row');
-        }
-      }
-      tr.innerHTML = `
-        <td>${fmtDatePL(rawDate)}</td>
-        <td>${home}</td>
-        <td>${away}</td>
-        <td>${score||''}</td>
-        <td>${sets||''}</td>
-        <td><span class="chip chip-cat">${cat||''}</span></td>
-      `;
-      tbT.appendChild(tr);
-    });
-  }
-  loadData();
+loadData();
 </script>
-
 </body>
 </html>
