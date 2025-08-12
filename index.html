@@ -210,35 +210,33 @@
     const res = await fetch(WEB_APP_URL + "?action=get", { cache:'no-store' });
     const data = await res.json();
 
-    // ===== TABELA: MŁODZIK =====
+     // ===== TABELA: MŁODZIK =====
     const tbM = document.querySelector('#tbl-mlodzik tbody');
     tbM.innerHTML = '';
-    (data.tabela_mlodzik || []).forEach(r=>{
-      const tr = document.createElement('tr');
-      const c0 = createCell(r.team, {left:true}); c0.style.paddingLeft='12px';
-      tr.appendChild(c0);
-      tr.appendChild(createCell(r.matches));
-      tr.appendChild(createCell(r.wins));
-      tr.appendChild(createCell(r.losses));
-      tr.appendChild(createCell(r.smallPoints));
-      tr.appendChild(createCell(r.scoreTable));
-      tbM.appendChild(tr);
-    });
+    (data.tabela_mlodzik.forEach(row => {
+  t1.innerHTML += `<tr>
+    <td>${row.team}</td>
+    <td>${row.matches}</td>
+    <td>${row.wins}</td>
+    <td>${row.losses}</td>
+    <td>${row.smallPoints}</td>
+    <td>${row.scoreTable}</td>
+  </tr>`;
+});
 
     // ===== TABELA: MŁODZICZKA =====
     const tbF = document.querySelector('#tbl-mlodziczka tbody');
     tbF.innerHTML = '';
-    (data.tabela_mlodziczka || []).forEach(r=>{
-      const tr = document.createElement('tr');
-      const c0 = createCell(r.team, {left:true}); c0.style.paddingLeft='12px';
-      tr.appendChild(c0);
-      tr.appendChild(createCell(r.matches));
-      tr.appendChild(createCell(r.wins));
-      tr.appendChild(createCell(r.losses));
-      tr.appendChild(createCell(r.smallPoints));
-      tr.appendChild(createCell(r.scoreTable));
-      tbF.appendChild(tr);
-    });
+    (data.tabela_mlodziczka.forEach(row => {
+  t1.innerHTML += `<tr>
+    <td>${row.team}</td>
+    <td>${row.matches}</td>
+    <td>${row.wins}</td>
+    <td>${row.losses}</td>
+    <td>${row.smallPoints}</td>
+    <td>${row.scoreTable}</td>
+  </tr>`;
+});
 
     // ===== TERMINARZ =====
     const tbT = document.querySelector('#tbl-terminarz tbody');
