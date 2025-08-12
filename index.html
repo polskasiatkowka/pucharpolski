@@ -1,99 +1,53 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tabele Siatkarskie</title>
-  <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: url('https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=1600&q=80') no-repeat center center fixed;
-        background-size: cover;
-        margin: 0;
-        padding: 0;
-    }
-    .container {
-        max-width: 900px;
-        margin: 20px auto;
-        background: rgba(255,255,255,0.95);
-        border-radius: 10px;
-        padding: 20px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-    header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: #1d5eb7;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 10px 10px 0 0;
-    }
-    header h1 {
-        font-size: 20px;
-        margin: 0;
-    }
-    button {
-        background: #f58220;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-    button:hover {
-        background: #d96f15;
-    }
-    h2 {
-        margin-top: 20px;
-        color: #1d5eb7;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 10px;
-        font-size: 14px;
-    }
-    th, td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: center;
-    }
-    th {
-        background: #f0f0f0;
-    }
-    @media (max-width: 600px) {
-        table, thead, tbody, th, td, tr {
-            display: block;
-        }
-        tr {
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            padding: 8px;
-            background: white;
-        }
-        td {
-            text-align: right;
-            position: relative;
-            padding-left: 50%;
-        }
-        td::before {
-            position: absolute;
-            left: 10px;
-            top: 8px;
-            white-space: nowrap;
-            font-weight: bold;
-        }
-    }
-    #login-box {
-        margin-top: 10px;
-        display: none;
-    }
-    #login-error {
-        color: red;
-        display: none;
-        margin-top: 5px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tabele Siatkarskie</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: url('https://twoj-login.github.io/pucharpolski/images/boisko.png') no-repeat center center fixed;
+    background-size: cover;
+    margin: 0;
+    padding: 0;
+  }
+  .container {
+    max-width: 1000px;
+    margin: auto;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    margin-top: 20px;
+  }
+  h1 {
+    text-align: center;
+    background: #1565c0;
+    color: white;
+    padding: 10px;
+    border-radius: 6px;
+  }
+  h2 {
+    margin-top: 25px;
+    background: #ff9800;
+    color: white;
+    padding: 8px;
+    border-radius: 4px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  th, td {
+    padding: 8px;
+    border: 1px solid #999;
+    text-align: center;
+  }
+  th {
+    background-color: #1565c0;
+    color: white;
+  }
 </style>
 </head>
 <body>
@@ -101,61 +55,33 @@
 <div class="container">
   <h1>Tabele Siatkarskie</h1>
 
-  <div class="login-box">
-    <input type="password" id="password" placeholder="Hasło administratora">
-    <button onclick="login()">Zaloguj</button>
-  </div>
+  <h2>Młodzik</h2>
+  <table id="tabelaMlodzik">
+    <thead>
+      <tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-  <div id="content">
-    <h2>Młodzik</h2>
-    <table id="tabelaMlodzik"></table>
+  <h2>Młodziczka</h2>
+  <table id="tabelaMlodziczka">
+    <thead>
+      <tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-    <h2>Młodziczka</h2>
-    <table id="tabelaMlodziczka"></table>
-
-    <h2>Terminarz</h2>
-    <table id="tabelaTerminarz"></table>
-  </div>
-
-  <!-- Panel widoczny tylko dla admina -->
-  <div id="adminPanel" class="admin-panel hidden">
-    <h3>Dodaj mecz</h3>
-    <label>Data: <input type="text" id="dataMeczu" placeholder="dd.mm.rrrr"></label>
-    <label>Gospodarz: <input type="text" id="gospodarz"></label>
-    <label>Gość: <input type="text" id="gosc"></label>
-    <label>Wynik: <input type="text" id="wynik" placeholder="np. 3-1"></label>
-    <button onclick="dodajMecz()">Dodaj</button>
-  </div>
+  <h2>Terminarz</h2>
+  <table id="tabelaTerminarz">
+    <thead>
+      <tr><th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Protokół</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyl106GXSzKOMWjI7cJ46mbzv-7Q-nMKPv0VZKBYrL_-V9PcV6jFqqwGL-jLx_7-1TE/exec";
-let isAdmin = false;
-let adminPassword = "";
-
-// Ładowanie danych zawsze (dla gościa też)
-window.onload = loadData;
-
-function login() {
-  const pass = document.getElementById("password").value;
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: "auth", password: pass }),
-    headers: { "Content-Type": "application/json" }
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.ok) {
-      isAdmin = true;
-      adminPassword = pass;
-      document.getElementById("adminPanel").classList.remove("hidden");
-      alert("Zalogowano jako administrator!");
-    } else {
-      alert("Błędne hasło!");
-    }
-  })
-  .catch(err => console.error(err));
-}
+const SCRIPT_URL = "TU_WKLEJ_SWÓJ_WEB_APP_URL";
 
 function loadData() {
   fetch(SCRIPT_URL + "?action=get")
@@ -164,53 +90,29 @@ function loadData() {
       fillTable("tabelaMlodzik", data.tabela_mlodzik);
       fillTable("tabelaMlodziczka", data.tabela_mlodziczka);
       fillTable("tabelaTerminarz", data.terminarz);
-    });
+    })
+    .catch(err => console.error("Błąd ładowania danych", err));
 }
 
 function fillTable(id, rows) {
-  const table = document.getElementById(id);
-  table.innerHTML = "";
+  const tbody = document.getElementById(id).querySelector("tbody");
+  tbody.innerHTML = "";
   rows.forEach(row => {
     const tr = document.createElement("tr");
     row.forEach(cell => {
       const td = document.createElement("td");
-      td.textContent = cell;
+      if (typeof cell === "string" && cell.startsWith("http")) {
+        td.innerHTML = `<a href="${cell}" target="_blank">Zobacz</a>`;
+      } else {
+        td.textContent = cell;
+      }
       tr.appendChild(td);
     });
-    table.appendChild(tr);
+    tbody.appendChild(tr);
   });
 }
 
-function dodajMecz() {
-  if (!isAdmin) return alert("Brak uprawnień!");
-  
-  const data = document.getElementById("dataMeczu").value;
-  const gospodarz = document.getElementById("gospodarz").value;
-  const gosc = document.getElementById("gosc").value;
-  const wynik = document.getElementById("wynik").value;
-
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({
-      action: "addMatch",
-      password: adminPassword,
-      data: data,
-      gospodarz: gospodarz,
-      gosc: gosc,
-      wynik: wynik
-    }),
-    headers: { "Content-Type": "application/json" }
-  })
-  .then(res => res.json())
-  .then(resp => {
-    if (resp.ok) {
-      alert("Mecz dodany!");
-      loadData();
-    } else {
-      alert("Błąd przy dodawaniu meczu.");
-    }
-  });
-}
+loadData();
 </script>
 
 </body>
