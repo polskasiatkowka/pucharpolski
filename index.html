@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Terminarz i Tabela</title>
+<title>Terminarz i Tabele Ligowe</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -44,10 +44,8 @@
     background: rgba(255,255,255,0.2);
   }
   /* Kolorowanie terminarza */
-  .win { background-color: rgba(0, 128, 0, 0.4); }
-  .loss { background-color: rgba(255, 0, 0, 0.4); }
-  .pending { background-color: rgba(128, 128, 128, 0.4); }
-
+  .win { background-color: rgba(0,255,0,0.2); }
+  .lose { background-color: rgba(255,0,0,0.2); }
   @media (max-width: 768px) {
     h1 {
       font-size: 20px;
@@ -149,32 +147,22 @@ async function ladujDane() {
     </tr>`;
   });
 
-  // Terminarz z sortowaniem
+  // Terminarz z kolorowaniem
   const t3 = document.querySelector("#terminarz tbody");
   t3.innerHTML = "";
-
-  let terminarzSorted = [...data.terminarz].sort((a, b) => {
-    let wynikA = a[3] ? 1 : 0;
-    let wynikB = b[3] ? 1 : 0;
-    if (wynikA !== wynikB) return wynikA - wynikB; // Najpierw bez wyniku
-    let [dA, mA, rA] = a[0].split(".").map(Number);
-    let [dB, mB, rB] = b[0].split(".").map(Number);
-    return new Date(rA, mA - 1, dA) - new Date(rB, mB - 1, dB);
-  });
-
-  terminarzSorted.forEach(row => {
-    let wynik = row[3];
-    let cssClass = "pending";
-    if (wynik && wynik.includes(":")) {
-      let [gosp, gosc] = wynik.split(":").map(Number);
-      if (gosp > gosc) cssClass = "win";
-      else if (gosp < gosc) cssClass = "loss";
+  data.terminarz.forEach(row => {
+    let wynik = row[3] || "";
+    let cssClass = "";
+    if (wynik) {
+      const [w1, w2] = wynik.split(":").map(Number);
+      if (w1 > w2) cssClass = "win";
+      if (w1 < w2) cssClass = "lose";
     }
     t3.innerHTML += `<tr class="${cssClass}">
       <td>${row[0]}</td>
       <td>${row[1]}</td>
       <td>${row[2]}</td>
-      <td>${row[3] || ""}</td>
+      <td>${wynik}</td>
       <td>${row[4] || ""}</td>
       <td>${row[5]}</td>
     </tr>`;
