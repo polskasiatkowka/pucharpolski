@@ -6,71 +6,95 @@
   <title>Tabele Siatkarskie</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: url('https://twoj-login.github.io/pucharpolski/images/boisko.png') no-repeat center center fixed;
-      background-size: cover;
-      margin: 0;
-      padding: 0;
-      color: #fff;
+        font-family: Arial, sans-serif;
+        background: url('https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=1600&q=80') no-repeat center center fixed;
+        background-size: cover;
+        margin: 0;
+        padding: 0;
     }
     .container {
-      max-width: 900px;
-      margin: auto;
-      background: rgba(0,0,0,0.75);
-      padding: 20px;
-      border-radius: 10px;
-      margin-top: 30px;
+        max-width: 900px;
+        margin: 20px auto;
+        background: rgba(255,255,255,0.95);
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
-    h1 {
-      text-align: center;
-      background: #1565c0;
-      padding: 10px;
-      border-radius: 6px;
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #1d5eb7;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px 10px 0 0;
     }
-    .login-box {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    input, button {
-      padding: 8px;
-      margin: 5px;
-      border-radius: 5px;
-      border: none;
+    header h1 {
+        font-size: 20px;
+        margin: 0;
     }
     button {
-      background-color: #ff9800;
-      color: white;
-      cursor: pointer;
+        background: #f58220;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #d96f15;
+    }
+    h2 {
+        margin-top: 20px;
+        color: #1d5eb7;
     }
     table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 15px 0;
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 14px;
     }
     th, td {
-      padding: 8px;
-      border: 1px solid #ccc;
-      background: rgba(255,255,255,0.9);
-      color: #000;
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
     }
     th {
-      background: #ff9800;
-      color: white;
+        background: #f0f0f0;
     }
-    .hidden {
-      display: none;
+    @media (max-width: 600px) {
+        table, thead, tbody, th, td, tr {
+            display: block;
+        }
+        tr {
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            padding: 8px;
+            background: white;
+        }
+        td {
+            text-align: right;
+            position: relative;
+            padding-left: 50%;
+        }
+        td::before {
+            position: absolute;
+            left: 10px;
+            top: 8px;
+            white-space: nowrap;
+            font-weight: bold;
+        }
     }
-    .admin-panel {
-      background: #333;
-      padding: 10px;
-      border-radius: 6px;
-      margin-top: 20px;
+    #login-box {
+        margin-top: 10px;
+        display: none;
     }
-    label {
-      display: block;
-      margin-top: 5px;
+    #login-error {
+        color: red;
+        display: none;
+        margin-top: 5px;
     }
-  </style>
+</style>
 </head>
 <body>
 
