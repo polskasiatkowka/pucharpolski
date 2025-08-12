@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tabele Siatkarskie</title>
+<title>Tabele i Terminarz</title>
 <style>
   body {
     font-family: Arial, sans-serif;
-    background: url('https://twoj-login.github.io/pucharpolski/images/boisko.png') no-repeat center center fixed;
+    background: url('https://upload.wikimedia.org/wikipedia/commons/f/f4/Volleyball_court.png') no-repeat center center fixed;
     background-size: cover;
     margin: 0;
     padding: 0;
@@ -15,9 +15,9 @@
   .container {
     max-width: 1000px;
     margin: auto;
-    padding: 15px;
     background: rgba(255, 255, 255, 0.95);
-    border-radius: 8px;
+    padding: 15px;
+    border-radius: 10px;
     margin-top: 20px;
   }
   h1 {
@@ -28,20 +28,19 @@
     border-radius: 6px;
   }
   h2 {
-    margin-top: 25px;
+    margin-top: 20px;
     background: #ff9800;
     color: white;
     padding: 8px;
     border-radius: 4px;
   }
   .table-wrapper {
-    overflow-x: auto; /* przewijanie w poziomie na telefonach */
+    overflow-x: auto;
   }
   table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
-    min-width: 500px; /* żeby kolumny nie były zbyt wąskie */
   }
   th, td {
     padding: 8px;
@@ -55,7 +54,6 @@
 </style>
 </head>
 <body>
-
 <div class="container">
   <h1>Tabele Siatkarskie</h1>
 
@@ -63,7 +61,7 @@
   <div class="table-wrapper">
     <table id="tabelaMlodzik">
       <thead>
-        <tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th></tr>
+        <tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th></tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -73,7 +71,7 @@
   <div class="table-wrapper">
     <table id="tabelaMlodziczka">
       <thead>
-        <tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th></tr>
+        <tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th></tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -81,9 +79,9 @@
 
   <h2>Terminarz</h2>
   <div class="table-wrapper">
-    <table id="tabelaTerminarz">
+    <table id="terminarz">
       <thead>
-        <tr><th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Protokół</th></tr>
+        <tr><th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Kategoria</th></tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -91,39 +89,45 @@
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_UT1KMMuD0zvCY4f-T4F_4dYSWhBOngPQ5C7vIR55mG8Hgy9mJi7AY8z1eOMgvT9D/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_UT1KMMuD0zvCY4f-T4F_4dYSWhBOngPQ5C7vIR55mG8Hgy9mJi7AY8z1eOMgvT9D/exec"; // <-- wklej swój
 
-function loadData() {
-  fetch(SCRIPT_URL + "?action=get")
-    .then(res => res.json())
-    .then(data => {
-      fillTable("tabelaMlodzik", data.tabela_mlodzik);
-      fillTable("tabelaMlodziczka", data.tabela_mlodziczka);
-      fillTable("tabelaTerminarz", data.terminarz);
-    })
-    .catch(err => console.error("Błąd ładowania danych", err));
-}
+async function ladujDane() {
+  try {
+    const res = await fetch(SCRIPT_URL + "?action=get");
+    const data = await res.json();
 
-function fillTable(id, rows) {
-  const tbody = document.getElementById(id).querySelector("tbody");
-  tbody.innerHTML = "";
-  rows.forEach(row => {
-    const tr = document.createElement("tr");
-    row.forEach(cell => {
-      const td = document.createElement("td");
-      if (typeof cell === "string" && cell.startsWith("http")) {
-        td.innerHTML = `<a href="${cell}" target="_blank">Zobacz</a>`;
-      } else {
-        td.textContent = cell;
-      }
-      tr.appendChild(td);
+    // Młodzik
+    const t1 = document.querySelector("#tabelaMlodzik tbody");
+    t1.innerHTML = "";
+    data.tabela_mlodzik.forEach(row => {
+      t1.innerHTML += `<tr><td>${row[0]}</td><td>${row[1] || ""}</td><td>${row[2] || ""}</td><td>${row[3] || ""}</td></tr>`;
     });
-    tbody.appendChild(tr);
-  });
+
+    // Młodziczka
+    const t2 = document.querySelector("#tabelaMlodziczka tbody");
+    t2.innerHTML = "";
+    data.tabela_mlodziczka.forEach(row => {
+      t2.innerHTML += `<tr><td>${row[0]}</td><td>${row[1] || ""}</td><td>${row[2] || ""}</td><td>${row[3] || ""}</td></tr>`;
+    });
+
+    // Terminarz
+    const t3 = document.querySelector("#terminarz tbody");
+    t3.innerHTML = "";
+    data.terminarz.forEach(row => {
+      let dataCell = row[0];
+      if (!isNaN(dataCell)) { // konwersja timestamp -> data
+        const d = new Date(dataCell);
+        dataCell = d.toLocaleDateString("pl-PL");
+      }
+      t3.innerHTML += `<tr><td>${dataCell}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3] || ""}</td><td>${row[4] || ""}</td></tr>`;
+    });
+
+  } catch (err) {
+    console.error("Błąd ładowania danych:", err);
+  }
 }
 
-loadData();
+ladujDane();
 </script>
-
 </body>
 </html>
