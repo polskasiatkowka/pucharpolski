@@ -14,68 +14,32 @@
     --win:#e7f6ec;
     --loss:#fdecec;
   }
-  body{
-    margin:0;
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    color:var(--text);
-    background:#f2f5f9;
-  }
-  header.site-header{
-    background:var(--pzps-blue);
-    color:#fff;
-    padding:18px 16px;
-    box-shadow:0 2px 8px rgba(0,0,0,.08);
-  }
-  .site-header .wrap{
-    max-width:1100px; margin:0 auto;
-  }
-  .site-title{
-    margin:0; font-weight:700; font-size: clamp(18px,2.3vw,24px);
-  }
-  .container{ max-width:1100px; margin:28px auto; padding:0 16px; }
-  .card{
-    background:#fff; border-radius:12px; overflow:hidden;
-    box-shadow:0 6px 18px rgba(13,59,102,.08);
-    margin-bottom:20px;
-    border:1px solid #e8edf3;
-  }
-  .card-header{
-    background:linear-gradient(180deg, #114676 0%, #0d3b66 100%);
-    color:#fff; padding:14px 16px; border-bottom:3px solid var(--pzps-gold);
-  }
-  .card-header h2{ margin:0; font-size: clamp(16px,2vw,20px); }
-  .card-body{ padding:12px 14px; }
-  .note{ color:var(--muted); font-size:13px; margin-top:8px; }
-  .table-wrap{ overflow-x:auto; }
-  table.pzps{
-    width:100%; border-collapse:collapse; min-width:560px;
-  }
-  table.pzps thead th{
-    text-align:center; font-weight:700; color:#fff; background:var(--pzps-blue);
-    padding:10px 8px;
-  }
-  table.pzps tbody td{
-    padding:10px 8px; text-align:center; border-bottom:1px solid #eef2f6;
-  }
-  table.pzps tbody tr:nth-child(even){ background:var(--row-alt); }
-  .chip{
-    display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid transparent;
-  }
-  .chip-cat{ background:#f9fafb; color:#334155; border-color:#e5e7eb; }
-  .chip-win{ background:var(--win); color:#14532d; border-color:#c8e8d3; }
-  .chip-loss{ background:var(--loss); color:#7f1d1d; border-color:#f6c7c7; }
-  tr.win-row   { background:var(--win) !important; }
-  tr.loss-row  { background:var(--loss) !important; }
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:#f2f5f9;}
+  header.site-header{background:var(--pzps-blue);color:#fff;padding:18px 16px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  .site-header .wrap{max-width:1100px;margin:0 auto;}
+  .site-title{margin:0;font-weight:700;font-size:clamp(18px,2.3vw,24px);}
+  .container{max-width:1100px;margin:28px auto;padding:0 16px;}
+  .card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 6px 18px rgba(13,59,102,.08);margin-bottom:20px;border:1px solid #e8edf3;}
+  .card-header{background:linear-gradient(180deg, #114676 0%, #0d3b66 100%);color:#fff;padding:14px 16px;border-bottom:3px solid var(--pzps-gold);}
+  .card-header h2{margin:0;font-size:clamp(16px,2vw,20px);}
+  .card-body{padding:12px 14px;}
+  .table-wrap{overflow-x:auto;}
+  table.pzps{width:100%;border-collapse:collapse;min-width:560px;}
+  table.pzps thead th{text-align:center;font-weight:700;color:#fff;background:var(--pzps-blue);padding:10px 8px;}
+  table.pzps tbody td{padding:10px 8px;text-align:center;border-bottom:1px solid #eef2f6;}
+  table.pzps tbody tr:nth-child(even){background:var(--row-alt);}
+  .chip{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid transparent;}
+  .chip-cat{background:#f9fafb;color:#334155;border-color:#e5e7eb;}
+  tr.win-row{background:var(--win)!important;}
+  tr.loss-row{background:var(--loss)!important;}
 </style>
 </head>
 <body>
-
 <header class="site-header">
   <div class="wrap">
     <h1 class="site-title">Tabele i terminarz – siatkówka młodzieżowa</h1>
   </div>
 </header>
-
 <main class="container">
   <section class="card">
     <div class="card-header"><h2>MŁODZIK</h2></div>
@@ -88,7 +52,6 @@
       </div>
     </div>
   </section>
-
   <section class="card">
     <div class="card-header"><h2>MŁODZICZKA</h2></div>
     <div class="card-body">
@@ -100,7 +63,6 @@
       </div>
     </div>
   </section>
-
   <section class="card">
     <div class="card-header"><h2>TERMINARZ</h2></div>
     <div class="card-body">
@@ -113,7 +75,6 @@
     </div>
   </section>
 </main>
-
 <script>
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz7XpJR1L_eWbKn_wTuFQHWWqrdyQzZqiVz7naaeN_q11I2PTB2RtBfDeudzLk1aWNDaA/exec";
 
@@ -124,18 +85,18 @@ function createCell(text, opts={}) {
   return td;
 }
 
-function chip(text, cls) {
-  const span = document.createElement('span');
-  span.className = `chip ${cls}`;
-  span.textContent = text;
-  return span;
+function formatDate(d) {
+  const dt = new Date(d);
+  if (!isNaN(dt)) {
+    return dt.toLocaleDateString('pl-PL');
+  }
+  return d;
 }
 
 async function loadData(){
   const res = await fetch(WEB_APP_URL, { cache:'no-store' });
   const data = await res.json();
 
-  // Młodzik
   const tbM = document.querySelector('#tbl-mlodzik tbody');
   tbM.innerHTML = '';
   data.tabela_mlodzik.forEach(row => {
@@ -149,7 +110,6 @@ async function loadData(){
     tbM.appendChild(tr);
   });
 
-  // Młodziczka
   const tbF = document.querySelector('#tbl-mlodziczka tbody');
   tbF.innerHTML = '';
   data.tabela_mlodziczka.forEach(row => {
@@ -163,7 +123,6 @@ async function loadData(){
     tbF.appendChild(tr);
   });
 
-  // Terminarz
   const tbT = document.querySelector('#tbl-terminarz tbody');
   tbT.innerHTML = '';
   data.terminarz.forEach(row => {
@@ -174,7 +133,7 @@ async function loadData(){
       if (sH > sA) tr.classList.add('win-row');
       if (sH < sA) tr.classList.add('loss-row');
     }
-    tr.appendChild(createCell(date));
+    tr.appendChild(createCell(formatDate(date)));
     tr.appendChild(createCell(home));
     tr.appendChild(createCell(away));
     tr.appendChild(createCell(score));
