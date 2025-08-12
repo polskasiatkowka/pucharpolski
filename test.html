@@ -10,12 +10,11 @@
 
 <script>
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz7XpJR1L_eWbKn_wTuFQHWWqrdyQzZqiVz7naaeN_q11I2PTB2RtBfDeudzLk1aWNDaA/exec";
-);
 
 async function testFetch() {
   try {
     const res = await fetch(WEB_APP_URL, { cache: "no-store" });
-    const text = await res.text(); // surowy tekst
+    const text = await res.text(); // surowy tekst z Apps Script
     document.getElementById("output").textContent = text;
   } catch (err) {
     document.getElementById("output").textContent = "Błąd: " + err;
