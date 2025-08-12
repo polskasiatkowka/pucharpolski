@@ -2,132 +2,187 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tabele i Terminarz</title>
+<title>Terminarz i Tabela</title>
 <style>
   body {
     font-family: Arial, sans-serif;
-    background: url('https://upload.wikimedia.org/wikipedia/commons/f/f4/Volleyball_court.png') no-repeat center center fixed;
+    color: white;
+    text-align: center;
+    background: url('https://upload.wikimedia.org/wikipedia/commons/7/77/Volleyball_court_illustration.png') no-repeat center center fixed;
     background-size: cover;
     margin: 0;
     padding: 0;
   }
-  .container {
-    max-width: 1000px;
-    margin: auto;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 15px;
-    border-radius: 10px;
-    margin-top: 20px;
-  }
   h1 {
-    text-align: center;
-    background: #1565c0;
-    color: white;
-    padding: 10px;
-    border-radius: 6px;
+    background: rgba(0,0,0,0.7);
+    padding: 15px;
+    margin: 0;
   }
-  h2 {
-    margin-top: 20px;
-    background: #ff9800;
-    color: white;
-    padding: 8px;
-    border-radius: 4px;
-  }
-  .table-wrapper {
+  .section {
+    margin: 20px auto;
+    padding: 15px;
+    max-width: 95%;
+    background: rgba(0,0,0,0.6);
+    border-radius: 10px;
     overflow-x: auto;
   }
   table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    margin: 10px 0;
+    min-width: 500px;
+  }
+  table, th, td {
+    border: 1px solid white;
   }
   th, td {
     padding: 8px;
-    border: 1px solid #999;
     text-align: center;
+    white-space: nowrap;
   }
   th {
-    background-color: #1565c0;
-    color: white;
+    background: rgba(255,255,255,0.2);
+  }
+  /* Kolorowanie terminarza */
+  .win { background-color: rgba(0, 128, 0, 0.4); }
+  .loss { background-color: rgba(255, 0, 0, 0.4); }
+  .pending { background-color: rgba(128, 128, 128, 0.4); }
+
+  @media (max-width: 768px) {
+    h1 {
+      font-size: 20px;
+    }
+    th, td {
+      font-size: 14px;
+      padding: 6px;
+    }
   }
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>Tabele Siatkarskie</h1>
 
-  <h2>Młodzik</h2>
-  <div class="table-wrapper">
-    <table id="tabelaMlodzik">
-      <thead>
-        <tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+<h1>Terminarz i Tabele Ligowe</h1>
 
-  <h2>Młodziczka</h2>
-  <div class="table-wrapper">
-    <table id="tabelaMlodziczka">
-      <thead>
-        <tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+<div class="section">
+  <h2>Tabela — Młodzik</h2>
+  <table id="tabela-mlodzik">
+    <thead>
+      <tr>
+        <th>Drużyna</th>
+        <th>M</th>
+        <th>W</th>
+        <th>P</th>
+        <th>Małe punkty</th>
+        <th>Punkty</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
 
+<div class="section">
+  <h2>Tabela — Młodziczka</h2>
+  <table id="tabela-mlodziczka">
+    <thead>
+      <tr>
+        <th>Drużyna</th>
+        <th>M</th>
+        <th>W</th>
+        <th>P</th>
+        <th>Małe punkty</th>
+        <th>Punkty</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="section">
   <h2>Terminarz</h2>
-  <div class="table-wrapper">
-    <table id="terminarz">
-      <thead>
-        <tr><th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Kategoria</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  <table id="terminarz">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Gospodarz</th>
+        <th>Gość</th>
+        <th>Wynik</th>
+        <th>Sety</th>
+        <th>Kategoria</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_UT1KMMuD0zvCY4f-T4F_4dYSWhBOngPQ5C7vIR55mG8Hgy9mJi7AY8z1eOMgvT9D/exec"; // <-- wklej swój
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx9Vq-obHD0tFX2e9e0bzYqBwFO9LdGShK9j5-6M7wDvwwFEfE65X7VHTEDR66xAT6jowEi9V/exec";
 
 async function ladujDane() {
-  try {
-    const res = await fetch(SCRIPT_URL + "?action=get");
-    const data = await res.json();
+  let res = await fetch(WEB_APP_URL + "?action=get");
+  let data = await res.json();
 
-    // Młodzik
-    const t1 = document.querySelector("#tabelaMlodzik tbody");
-    t1.innerHTML = "";
-    data.tabela_mlodzik.forEach(row => {
-      t1.innerHTML += `<tr><td>${row[0]}</td><td>${row[1] || ""}</td><td>${row[2] || ""}</td><td>${row[3] || ""}</td></tr>`;
-    });
+  // Tabela Młodzik
+  const t1 = document.querySelector("#tabela-mlodzik tbody");
+  t1.innerHTML = "";
+  data.tabela_mlodzik.forEach(row => {
+    t1.innerHTML += `<tr>
+      <td>${row.team}</td>
+      <td>${row.matches}</td>
+      <td>${row.wins}</td>
+      <td>${row.losses}</td>
+      <td>${row.smallPoints}</td>
+      <td>${row.scoreTable}</td>
+    </tr>`;
+  });
 
-    // Młodziczka
-    const t2 = document.querySelector("#tabelaMlodziczka tbody");
-    t2.innerHTML = "";
-    data.tabela_mlodziczka.forEach(row => {
-      t2.innerHTML += `<tr><td>${row[0]}</td><td>${row[1] || ""}</td><td>${row[2] || ""}</td><td>${row[3] || ""}</td></tr>`;
-    });
+  // Tabela Młodziczka
+  const t2 = document.querySelector("#tabela-mlodziczka tbody");
+  t2.innerHTML = "";
+  data.tabela_mlodziczka.forEach(row => {
+    t2.innerHTML += `<tr>
+      <td>${row.team}</td>
+      <td>${row.matches}</td>
+      <td>${row.wins}</td>
+      <td>${row.losses}</td>
+      <td>${row.smallPoints}</td>
+      <td>${row.scoreTable}</td>
+    </tr>`;
+  });
 
-    // Terminarz
-    const t3 = document.querySelector("#terminarz tbody");
-    t3.innerHTML = "";
-    data.terminarz.forEach(row => {
-      let dataCell = row[0];
-      if (!isNaN(dataCell)) { // konwersja timestamp -> data
-        const d = new Date(dataCell);
-        dataCell = d.toLocaleDateString("pl-PL");
-      }
-      t3.innerHTML += `<tr><td>${dataCell}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3] || ""}</td><td>${row[4] || ""}</td></tr>`;
-    });
+  // Terminarz z sortowaniem
+  const t3 = document.querySelector("#terminarz tbody");
+  t3.innerHTML = "";
 
-  } catch (err) {
-    console.error("Błąd ładowania danych:", err);
-  }
+  let terminarzSorted = [...data.terminarz].sort((a, b) => {
+    let wynikA = a[3] ? 1 : 0;
+    let wynikB = b[3] ? 1 : 0;
+    if (wynikA !== wynikB) return wynikA - wynikB; // Najpierw bez wyniku
+    let [dA, mA, rA] = a[0].split(".").map(Number);
+    let [dB, mB, rB] = b[0].split(".").map(Number);
+    return new Date(rA, mA - 1, dA) - new Date(rB, mB - 1, dB);
+  });
+
+  terminarzSorted.forEach(row => {
+    let wynik = row[3];
+    let cssClass = "pending";
+    if (wynik && wynik.includes(":")) {
+      let [gosp, gosc] = wynik.split(":").map(Number);
+      if (gosp > gosc) cssClass = "win";
+      else if (gosp < gosc) cssClass = "loss";
+    }
+    t3.innerHTML += `<tr class="${cssClass}">
+      <td>${row[0]}</td>
+      <td>${row[1]}</td>
+      <td>${row[2]}</td>
+      <td>${row[3] || ""}</td>
+      <td>${row[4] || ""}</td>
+      <td>${row[5]}</td>
+    </tr>`;
+  });
 }
 
 ladujDane();
 </script>
+
 </body>
 </html>
