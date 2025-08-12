@@ -3,95 +3,96 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tabela i terminarz</title>
+<title>Tabele Siatkarskie</title>
 <style>
     body {
         font-family: Arial, sans-serif;
+        background: url('https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=1600&q=80') no-repeat center center fixed;
+        background-size: cover;
         margin: 0;
-        background: url('https://upload.wikimedia.org/wikipedia/commons/5/51/Volleyball_court_background.jpg') no-repeat center center/cover;
+        padding: 0;
     }
     .container {
         max-width: 900px;
-        margin: 30px auto;
-        background: white;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        margin: 20px auto;
+        background: rgba(255,255,255,0.95);
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
     header {
-        background: #1d5ea8;
-        color: white;
-        padding: 15px 20px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        background: #1d5eb7;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px 10px 0 0;
     }
     header h1 {
+        font-size: 20px;
         margin: 0;
-        font-size: 22px;
-        display: flex;
-        gap: 20px;
     }
-    header button {
-        background: white;
+    button {
+        background: #f58220;
+        color: white;
         border: none;
-        color: #1d5ea8;
-        font-weight: bold;
-        padding: 8px 15px;
+        padding: 8px 16px;
         border-radius: 5px;
         cursor: pointer;
     }
-    .tables {
-        display: flex;
-        gap: 20px;
-        padding: 20px;
-        flex-wrap: wrap;
+    button:hover {
+        background: #d96f15;
+    }
+    h2 {
+        margin-top: 20px;
+        color: #1d5eb7;
     }
     table {
-        border-collapse: collapse;
         width: 100%;
-        min-width: 200px;
-        background: #f8f8f8;
-        border-radius: 10px;
-        overflow: hidden;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 14px;
     }
     th, td {
-        padding: 8px 12px;
-        border-bottom: 1px solid #ddd;
+        border: 1px solid #ddd;
+        padding: 8px;
         text-align: center;
     }
     th {
-        background: #ececec;
+        background: #f0f0f0;
     }
-    h2 {
-        padding: 0 20px;
+    @media (max-width: 600px) {
+        table, thead, tbody, th, td, tr {
+            display: block;
+        }
+        tr {
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            padding: 8px;
+            background: white;
+        }
+        td {
+            text-align: right;
+            position: relative;
+            padding-left: 50%;
+        }
+        td::before {
+            position: absolute;
+            left: 10px;
+            top: 8px;
+            white-space: nowrap;
+            font-weight: bold;
+        }
     }
-    .schedule {
-        padding: 0 20px 20px;
-    }
-    .match {
-        display: flex;
-        justify-content: space-between;
-        padding: 6px 0;
-        border-bottom: 1px solid #ddd;
-    }
-    .add-match {
-        display: flex;
-        gap: 10px;
+    #login-box {
         margin-top: 10px;
+        display: none;
     }
-    .add-match input {
-        padding: 5px;
-        flex: 1;
-    }
-    .add-match button {
-        background: #f26522;
-        border: none;
-        color: white;
-        padding: 8px 15px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: bold;
+    #login-error {
+        color: red;
+        display: none;
+        margin-top: 5px;
     }
 </style>
 </head>
@@ -99,120 +100,79 @@
 
 <div class="container">
     <header>
-        <h1>
-            <span>MŁODZIK</span>
-            <span>MŁODZICZKA</span>
-        </h1>
-        <button onclick="login()">Zaloguj</button>
+        <h1>Tabele Siatkarskie</h1>
+        <button onclick="showLogin()">Zaloguj</button>
     </header>
 
-    <div class="tables">
-        <table id="table1">
-            <tr><th>Drużyna</th><th>Mecze</th><th>Wygrane</th><th>Przegrane</th></tr>
-        </table>
-        <table id="table2">
-            <tr><th>Drużyna</th><th>Mecze</th><th>Wygrane</th><th>Punkty</th></tr>
-        </table>
+    <div id="login-box">
+        <input type="password" id="password" placeholder="Wpisz hasło">
+        <button onclick="login()">Potwierdź</button>
+        <div id="login-error">Błędne hasło!</div>
     </div>
 
-    <h2>TERMINARZ</h2>
-    <div class="schedule" id="schedule"></div>
+    <div id="tables" style="display:none;">
+        <h2>MŁODZIK</h2>
+        <table id="mlodzik-table">
+            <thead>
+                <tr><th>Drużyna</th><th>Mecze</th><th>Wygrane</th><th>Przegrane</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
 
-    <div class="schedule">
-        <div class="add-match">
-            <input type="text" id="matchDate" placeholder="Data (DD.MM)">
-            <input type="text" id="team1" placeholder="Drużyna 1">
-            <input type="text" id="team2" placeholder="Drużyna 2">
-            <button onclick="addMatch()">Dodaj mecz</button>
-        </div>
+        <h2>MŁODZICZKA</h2>
+        <table id="mlodziczka-table">
+            <thead>
+                <tr><th>Drużyna</th><th>Mecze</th><th>Wygrane</th><th>Punkty</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
 </div>
 
 <script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyl106GXSzKOMWjI7cJ46mbzv-7Q-nMKPv0VZKBYrL_-V9PcV6jFqqwGL-jLx_7-1TE/exec";
+const CORRECT_PASSWORD = "V0lley2025!Secure#Key";
+const API_URL = "TU_WSTAW_SWÓJ_LINK_Z_APPS_SCRIPT"; // <-- wstaw link do Google Apps Script
 
-async function fetchData() {
-    const res = await fetch(WEB_APP_URL + "?action=get");
-    const data = await res.json();
-
-    // Przykład danych — musisz dopasować do formatu z Apps Script
-    const teams1 = [
-        ["Drużyna A", 3, 3, 0],
-        ["Drużyna B", 3, 2, 1],
-        ["Drużyna C", 3, 1, 2],
-        ["Drużyna D", 3, 0, 3],
-    ];
-    const teams2 = [
-        ["Drużyna A", 3, 0, 9],
-        ["Drużyna B", 2, 1, 6],
-        ["Drużyna C", 1, 2, 3],
-        ["Drużyna D", 0, 3, 0],
-    ];
-    const matches = [
-        ["01.05", "Drużyna A", "Drużyna C"],
-        ["02.05", "Drużyna B", "Drużyna D"],
-        ["03.05", "Drużyna A", "Drużyna B"],
-    ];
-
-    fillTable("table1", teams1);
-    fillTable("table2", teams2);
-    fillSchedule(matches);
-}
-
-function fillTable(id, rows) {
-    const table = document.getElementById(id);
-    rows.forEach(r => {
-        const tr = document.createElement("tr");
-        r.forEach(cell => {
-            const td = document.createElement("td");
-            td.textContent = cell;
-            tr.appendChild(td);
-        });
-        table.appendChild(tr);
-    });
-}
-
-function fillSchedule(matches) {
-    const schedule = document.getElementById("schedule");
-    schedule.innerHTML = "";
-    matches.forEach(m => {
-        const div = document.createElement("div");
-        div.className = "match";
-        div.textContent = `${m[0]}  ${m[1]} vs ${m[2]}`;
-        schedule.appendChild(div);
-    });
-}
-
-async function addMatch() {
-    const date = document.getElementById("matchDate").value;
-    const t1 = document.getElementById("team1").value;
-    const t2 = document.getElementById("team2").value;
-
-    if(!date || !t1 || !t2) return alert("Wypełnij wszystkie pola!");
-
-    await fetch(WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "addMatch", date, team1: t1, team2: t2 }),
-        headers: { "Content-Type": "application/json" }
-    });
-    fetchData();
+function showLogin() {
+    document.getElementById('login-box').style.display = 'block';
 }
 
 function login() {
-    const pass = prompt("Podaj hasło:");
-    if(pass) {
-        fetch(WEB_APP_URL, {
-            method: "POST",
-            body: JSON.stringify({ action: "auth", password: pass }),
-            headers: { "Content-Type": "application/json" }
-        }).then(r => r.json()).then(d => {
-            if(d.ok) alert("Zalogowano pomyślnie");
-            else alert("Błędne hasło");
-        });
+    const pass = document.getElementById('password').value;
+    if (pass === CORRECT_PASSWORD) {
+        document.getElementById('login-error').style.display = 'none';
+        document.getElementById('login-box').style.display = 'none';
+        document.getElementById('tables').style.display = 'block';
+        loadTables();
+    } else {
+        document.getElementById('login-error').style.display = 'block';
     }
 }
 
-fetchData();
+function loadTables() {
+    fetch(API_URL + "?action=getTables")
+    .then(res => res.json())
+    .then(data => {
+        fillTable('mlodzik-table', data.mlodzik);
+        fillTable('mlodziczka-table', data.mlodziczka);
+    })
+    .catch(err => console.error("Błąd pobierania danych:", err));
+}
+
+function fillTable(tableId, rows) {
+    const tbody = document.querySelector(`#${tableId} tbody`);
+    tbody.innerHTML = "";
+    rows.forEach(row => {
+        let tr = document.createElement('tr');
+        row.forEach(cell => {
+            let td = document.createElement('td');
+            td.textContent = cell;
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+}
 </script>
+
 </body>
 </html>
