@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Test JSON z Apps Script</title>
+</head>
+<body>
+<h1>Test pobierania danych z Apps Script</h1>
+<pre id="output">Ładowanie...</pre>
+
+<script>
+const WEB_APP_URL = "https://corsproxy.io/?" + encodeURIComponent(
+  "https://script.google.com/macros/s/AKfycbx9Vq-obHD0tFX2e9e0bzYqBwFO9LdGShK9j5-6M7wDvwwFEfE65X7VHTEDR66xAT6jowEi9V/exec?action=get"
+);
+
+async function testFetch() {
+  try {
+    const res = await fetch(WEB_APP_URL, { cache: "no-store" });
+    const text = await res.text(); // surowy tekst
+    document.getElementById("output").textContent = text;
+  } catch (err) {
+    document.getElementById("output").textContent = "Błąd: " + err;
+  }
+}
+
+testFetch();
+</script>
+</body>
+</html>
