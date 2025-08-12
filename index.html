@@ -2,175 +2,289 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Terminarz i Tabele Ligowe</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tabele i Terminarz – siatkówka</title>
+
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    color: white;
-    text-align: center;
-    background: url('https://upload.wikimedia.org/wikipedia/commons/7/77/Volleyball_court_illustration.png') no-repeat center center fixed;
-    background-size: cover;
-    margin: 0;
-    padding: 0;
+  :root{
+    --pzps-blue:#0d3b66;   /* granat */
+    --pzps-gold:#c9a227;   /* złoty akcent */
+    --row-alt:#f7f8fa;     /* paskowanie */
+    --text:#1c1c1c;
+    --muted:#6b7280;
+    --win:#e7f6ec;
+    --loss:#fdecec;
   }
-  h1 {
-    background: rgba(0,0,0,0.7);
-    padding: 15px;
-    margin: 0;
+
+  /* TŁO – jasne, bez „szarej mgły” */
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    color:var(--text);
+    background:#f2f5f9;
   }
-  .section {
-    margin: 20px auto;
-    padding: 15px;
-    max-width: 95%;
-    background: rgba(0,0,0,0.6);
-    border-radius: 10px;
-    overflow-x: auto;
+
+  /* GŁÓWNY NAGŁÓWEK w stylistyce pzps.pl */
+  header.site-header{
+    background:var(--pzps-blue);
+    color:#fff;
+    padding:18px 16px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
   }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 10px 0;
-    min-width: 500px;
+  .site-header .wrap{
+    max-width:1100px; margin:0 auto; display:flex; gap:16px; align-items:center; justify-content:space-between;
   }
-  table, th, td {
-    border: 1px solid white;
+  .site-title{
+    margin:0; font-weight:700; letter-spacing:.3px; font-size: clamp(18px,2.3vw,24px);
   }
-  th, td {
-    padding: 8px;
-    text-align: center;
-    white-space: nowrap;
+
+  /* KARTY z tabelami */
+  .container{ max-width:1100px; margin:28px auto; padding:0 16px; }
+  .card{
+    background:#fff; border-radius:12px; overflow:hidden;
+    box-shadow:0 6px 18px rgba(13,59,102,.08);
+    margin-bottom:20px;
+    border:1px solid #e8edf3;
   }
-  th {
-    background: rgba(255,255,255,0.2);
+  .card-header{
+    display:flex; align-items:center; justify-content:space-between;
+    background:linear-gradient(180deg, #114676 0%, #0d3b66 100%);
+    color:#fff; padding:14px 16px; border-bottom:3px solid var(--pzps-gold);
   }
-  /* Kolorowanie terminarza */
-  .win { background-color: rgba(0,255,0,0.2); }
-  .lose { background-color: rgba(255,0,0,0.2); }
-  @media (max-width: 768px) {
-    h1 {
-      font-size: 20px;
-    }
-    th, td {
-      font-size: 14px;
-      padding: 6px;
-    }
+  .card-header h2{ margin:0; font-size: clamp(16px,2vw,20px); font-weight:700; }
+  .card-body{ padding:12px 14px; }
+  .note{ color:var(--muted); font-size:13px; margin:4px 0 10px; }
+
+  /* TABELA */
+  .table-wrap{ overflow-x:auto; }
+  table.pzps{
+    width:100%; border-collapse:collapse; min-width:560px;
+  }
+  table.pzps thead th{
+    text-align:center; font-weight:700; color:#fff; background:var(--pzps-blue);
+    padding:10px 8px; position:sticky; top:0; z-index:1;
+  }
+  table.pzps tbody td{
+    padding:10px 8px; text-align:center; border-bottom:1px solid #eef2f6;
+  }
+  table.pzps tbody tr:nth-child(even){ background:var(--row-alt); }
+
+  /* CHIPY / BADGE */
+  .chip{
+    display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; line-height:1; border:1px solid transparent;
+  }
+  .chip-cat{ background:#f9fafb; color:#334155; border-color:#e5e7eb; }
+  .chip-win{ background:var(--win); color:#14532d; border-color:#c8e8d3; }
+  .chip-loss{ background:var(--loss); color:#7f1d1d; border-color:#f6c7c7; }
+  .muted{ color:var(--muted); }
+
+  /* KOLORY DLA TERMINARZA – delikatne tło wiersza tylko dla ROZEGRANYCH */
+  tr.win-row   { background:var(--win) !important; }
+  tr.loss-row  { background:var(--loss) !important; }
+
+  /* DROBNE RESPONSYWNE USTAWIENIA */
+  @media (max-width:640px){
+    .card-body{ padding:10px 8px; }
+    table.pzps{ min-width:520px; }
+    table.pzps thead th, table.pzps tbody td{ padding:8px 6px; font-size:14px; }
   }
 </style>
 </head>
 <body>
 
-<h1>Terminarz i Tabele Ligowe</h1>
+<header class="site-header">
+  <div class="wrap">
+    <h1 class="site-title">Tabele i terminarz – siatkówka młodzieżowa</h1>
+  </div>
+</header>
 
-<div class="section">
-  <h2>Tabela — Młodzik</h2>
-  <table id="tabela-mlodzik">
-    <thead>
-      <tr>
-        <th>Drużyna</th>
-        <th>M</th>
-        <th>W</th>
-        <th>P</th>
-        <th>Małe punkty</th>
-        <th>Punkty</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+<main class="container">
 
-<div class="section">
-  <h2>Tabela — Młodziczka</h2>
-  <table id="tabela-mlodziczka">
-    <thead>
-      <tr>
-        <th>Drużyna</th>
-        <th>M</th>
-        <th>W</th>
-        <th>P</th>
-        <th>Małe punkty</th>
-        <th>Punkty</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+  <!-- Tabela MŁODZIK -->
+  <section class="card">
+    <div class="card-header">
+      <h2>MŁODZIK</h2>
+    </div>
+    <div class="card-body">
+      <div class="table-wrap">
+        <table class="pzps" id="tbl-mlodzik">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding-left:12px;">Drużyna</th>
+              <th>M</th><th>W</th><th>P</th><th>Małe pkt</th><th>Punkty</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="note">Klasyfikacja liczona wg zasad: 3:0/3:1 → 3 pkt, 3:2 → 2 pkt (zwycięzca) i 1 pkt (pokonany).</div>
+    </div>
+  </section>
 
-<div class="section">
-  <h2>Terminarz</h2>
-  <table id="terminarz">
-    <thead>
-      <tr>
-        <th>Data</th>
-        <th>Gospodarz</th>
-        <th>Gość</th>
-        <th>Wynik</th>
-        <th>Sety</th>
-        <th>Kategoria</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+  <!-- Tabela MŁODZICZKA -->
+  <section class="card">
+    <div class="card-header">
+      <h2>MŁODZICZKA</h2>
+    </div>
+    <div class="card-body">
+      <div class="table-wrap">
+        <table class="pzps" id="tbl-mlodziczka">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding-left:12px;">Drużyna</th>
+              <th>M</th><th>W</th><th>P</th><th>Małe pkt</th><th>Punkty</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="note">Przy równej liczbie punktów decydują małe punkty.</div>
+    </div>
+  </section>
+
+  <!-- TERMINARZ -->
+  <section class="card">
+    <div class="card-header">
+      <h2>TERMINARZ</h2>
+    </div>
+    <div class="card-body">
+      <div class="table-wrap">
+        <table class="pzps" id="tbl-terminarz">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Gospodarz</th>
+              <th>Gość</th>
+              <th>Wynik</th>
+              <th>Sety</th>
+              <th>Kategoria</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="note">Mecze nadchodzące są wyświetlane u góry; rozegrane oznaczamy kolorem wiersza i chipem.</div>
+    </div>
+  </section>
+
+</main>
 
 <script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx9Vq-obHD0tFX2e9e0bzYqBwFO9LdGShK9j5-6M7wDvwwFEfE65X7VHTEDR66xAT6jowEi9V/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx9Vq-obHD0tFX2e9e0bzYqBwFO9LdGShK9j5-6M7wDvwwFEfE65X7VHTEDR66xAT6jowEi9V/exec";
 
-async function ladujDane() {
-  let res = await fetch(WEB_APP_URL + "?action=get");
-  let data = await res.json();
-
-  // Tabela Młodzik
-  const t1 = document.querySelector("#tabela-mlodzik tbody");
-  t1.innerHTML = "";
-  data.tabela_mlodzik.forEach(row => {
-    t1.innerHTML += `<tr>
-      <td>${row.team}</td>
-      <td>${row.matches}</td>
-      <td>${row.wins}</td>
-      <td>${row.losses}</td>
-      <td>${row.smallPoints}</td>
-      <td>${row.scoreTable}</td>
-    </tr>`;
-  });
-
-  // Tabela Młodziczka
-  const t2 = document.querySelector("#tabela-mlodziczka tbody");
-  t2.innerHTML = "";
-  data.tabela_mlodziczka.forEach(row => {
-    t2.innerHTML += `<tr>
-      <td>${row.team}</td>
-      <td>${row.matches}</td>
-      <td>${row.wins}</td>
-      <td>${row.losses}</td>
-      <td>${row.smallPoints}</td>
-      <td>${row.scoreTable}</td>
-    </tr>`;
-  });
-
-  // Terminarz z kolorowaniem
-  const t3 = document.querySelector("#terminarz tbody");
-  t3.innerHTML = "";
-  data.terminarz.forEach(row => {
-    let wynik = row[3] || "";
-    let cssClass = "";
-    if (wynik) {
-      const [w1, w2] = wynik.split(":").map(Number);
-      if (w1 > w2) cssClass = "win";
-      if (w1 < w2) cssClass = "lose";
+  // Bezpieczny parser dat: obsługuje "dd.MM.yyyy" i seriale/liczby
+  function parseDateAny(v){
+    if (v instanceof Date && !isNaN(v)) return v;
+    if (typeof v === 'number') {
+      // często Apps Script zwraca już normalny Date, ale gdyby był serial (dni od 1899), można to dostosować
+      return new Date(v);
     }
-    t3.innerHTML += `<tr class="${cssClass}">
-      <td>${row[0]}</td>
-      <td>${row[1]}</td>
-      <td>${row[2]}</td>
-      <td>${wynik}</td>
-      <td>${row[4] || ""}</td>
-      <td>${row[5]}</td>
-    </tr>`;
-  });
-}
+    if (typeof v === 'string' && v.includes('.')){
+      const [d,m,y] = v.split('.').map(Number);
+      if (!isNaN(d) && !isNaN(m) && !isNaN(y)) return new Date(y, m-1, d);
+    }
+    const dt = new Date(v);
+    return isNaN(dt) ? null : dt;
+  }
 
-ladujDane();
+  function fmtDatePL(v){
+    const d = parseDateAny(v);
+    return d ? d.toLocaleDateString('pl-PL') : (v ?? '');
+  }
+
+  function createCell(text, opts={}){
+    const td = document.createElement('td');
+    if (opts.left) td.style.textAlign='left';
+    td.textContent = (text ?? '') === '' ? '—' : text;
+    return td;
+  }
+
+  function chip(text, cls='chip'){
+    const span = document.createElement('span');
+    span.className = `chip ${cls}`;
+    span.textContent = text;
+    return span;
+  }
+
+  async function loadData(){
+    const res = await fetch(WEB_APP_URL + "?action=get", { cache:'no-store' });
+    const data = await res.json();
+
+    // ===== TABELA: MŁODZIK =====
+    const tbM = document.querySelector('#tbl-mlodzik tbody');
+    tbM.innerHTML = '';
+    (data.tabela_mlodzik || []).forEach(r=>{
+      const tr = document.createElement('tr');
+      const c0 = createCell(r.team, {left:true}); c0.style.paddingLeft='12px';
+      tr.appendChild(c0);
+      tr.appendChild(createCell(r.matches));
+      tr.appendChild(createCell(r.wins));
+      tr.appendChild(createCell(r.losses));
+      tr.appendChild(createCell(r.smallPoints));
+      tr.appendChild(createCell(r.scoreTable));
+      tbM.appendChild(tr);
+    });
+
+    // ===== TABELA: MŁODZICZKA =====
+    const tbF = document.querySelector('#tbl-mlodziczka tbody');
+    tbF.innerHTML = '';
+    (data.tabela_mlodziczka || []).forEach(r=>{
+      const tr = document.createElement('tr');
+      const c0 = createCell(r.team, {left:true}); c0.style.paddingLeft='12px';
+      tr.appendChild(c0);
+      tr.appendChild(createCell(r.matches));
+      tr.appendChild(createCell(r.wins));
+      tr.appendChild(createCell(r.losses));
+      tr.appendChild(createCell(r.smallPoints));
+      tr.appendChild(createCell(r.scoreTable));
+      tbF.appendChild(tr);
+    });
+
+    // ===== TERMINARZ =====
+    const tbT = document.querySelector('#tbl-terminarz tbody');
+    tbT.innerHTML = '';
+
+    // sort: najpierw bez wyniku (nadchodzące), potem z wynikiem; wewnątrz – po dacie rosnąco
+    const list = (data.terminarz || []).slice().sort((a,b)=>{
+      const hasA = !!(a?.[3]); const hasB = !!(b?.[3]);
+      if (hasA !== hasB) return hasA - hasB;
+      const dA = parseDateAny(a?.[0]); const dB = parseDateAny(b?.[0]);
+      return (dA?.getTime()||0) - (dB?.getTime()||0);
+    });
+
+    list.forEach(row=>{
+      const [rawDate, home, away, score, sets, cat] = row;
+      const tr = document.createElement('tr');
+
+      // kolor tylko gdy jest wynik i da się zinterpretować
+      let cssRow='', resultBadge = null;
+      if (score && score.includes(':')){
+        const [sH, sA] = score.split(':').map(n=>parseInt(n,10));
+        if (!isNaN(sH) && !isNaN(sA)){
+          if (sH > sA){ cssRow='win-row'; resultBadge = chip('WYGRANA', 'chip-win'); }
+          else if (sH < sA){ cssRow='loss-row'; resultBadge = chip('PORAŻKA', 'chip-loss'); }
+        }
+      }
+      if (cssRow) tr.classList.add(cssRow);
+
+      // Kolumny
+      tr.appendChild(createCell(fmtDatePL(rawDate)));
+      tr.appendChild(createCell(home));
+      tr.appendChild(createCell(away));
+
+      // Wynik z chipem
+      const tdScore = createCell(score || '');
+      if (resultBadge){ tdScore.innerHTML=''; tdScore.appendChild(resultBadge); }
+      tr.appendChild(tdScore);
+
+      tr.appendChild(createCell(sets || ''));
+      const tdCat = document.createElement('td'); tdCat.appendChild(chip(cat || '—','chip-cat')); tr.appendChild(tdCat);
+
+      tbT.appendChild(tr);
+    });
+  }
+
+  loadData();
 </script>
-
 </body>
 </html>
