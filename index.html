@@ -34,10 +34,14 @@
     padding: 8px;
     border-radius: 4px;
   }
+  .table-wrapper {
+    overflow-x: auto; /* przewijanie w poziomie na telefonach */
+  }
   table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
+    min-width: 500px; /* żeby kolumny nie były zbyt wąskie */
   }
   th, td {
     padding: 8px;
@@ -56,32 +60,38 @@
   <h1>Tabele Siatkarskie</h1>
 
   <h2>Młodzik</h2>
-  <table id="tabelaMlodzik">
-    <thead>
-      <tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div class="table-wrapper">
+    <table id="tabelaMlodzik">
+      <thead>
+        <tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
   <h2>Młodziczka</h2>
-  <table id="tabelaMlodziczka">
-    <thead>
-      <tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div class="table-wrapper">
+    <table id="tabelaMlodziczka">
+      <thead>
+        <tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
   <h2>Terminarz</h2>
-  <table id="tabelaTerminarz">
-    <thead>
-      <tr><th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Protokół</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div class="table-wrapper">
+    <table id="tabelaTerminarz">
+      <thead>
+        <tr><th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Protokół</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-const SCRIPT_URL = "TU_WKLEJ_SWÓJ_WEB_APP_URL";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyl106GXSzKOMWjI7cJ46mbzv-7Q-nMKPv0VZKBYrL_-V9PcV6jFqqwGL-jLx_7-1TE/exec";
 
 function loadData() {
   fetch(SCRIPT_URL + "?action=get")
