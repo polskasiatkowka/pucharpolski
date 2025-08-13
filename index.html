@@ -74,8 +74,9 @@
   </section>
 </main>
 <script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyMbFRv71q3XjOJ5JQmSWlQp1fXrqvnFa9hdooq9RJ2hY7RLHC1FiE3BC9q-Wwqg/exec";
-
+const WEB_APP_URL = "https://corsproxy.io/?" + encodeURIComponent(
+  "https://script.google.com/macros/s/AKfycbzuVkyXcTw8FVo80-IsBxbN0fEDmDB0KiQ9Vq-qiEwgV4tBEu1wzjK0zyPHauWXhnOJ/exec"
+);
 function createCell(text, opts={}) {
   const td = document.createElement('td');
   if (opts.left) td.style.textAlign = 'left';
