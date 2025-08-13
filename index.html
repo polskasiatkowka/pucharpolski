@@ -11,9 +11,8 @@
     --row-alt:#f7f8fa;
     --text:#1c1c1c;
     --muted:#6b7280;
-    --played:#f4f6fb;      /* neutralne tło dla rozegranych */
-    --badge:#eef2f6;       /* neutralny chip */
-    --badge-border:#dae2ea;
+    --win:#e7f6ec;
+    --loss:#fdecec;
   }
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:#f2f5f9;}
   header.site-header{background:var(--pzps-blue);color:#fff;padding:18px 16px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
@@ -21,189 +20,138 @@
   .site-title{margin:0;font-weight:700;font-size:clamp(18px,2.3vw,24px);}
   .container{max-width:1100px;margin:28px auto;padding:0 16px;}
   .card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 6px 18px rgba(13,59,102,.08);margin-bottom:20px;border:1px solid #e8edf3;}
-  .card-header{background:linear-gradient(180deg,#114676 0%,#0d3b66 100%);color:#fff;padding:14px 16px;border-bottom:3px solid var(--pzps-gold);}
-  .card-header h2{margin:0;font-size:clamp(16px,2vw,20px);font-weight:700;}
+  .card-header{background:linear-gradient(180deg, #114676 0%, #0d3b66 100%);color:#fff;padding:14px 16px;border-bottom:3px solid var(--pzps-gold);}
+  .card-header h2{margin:0;font-size:clamp(16px,2vw,20px);}
   .card-body{padding:12px 14px;}
   .table-wrap{overflow-x:auto;}
   table.pzps{width:100%;border-collapse:collapse;min-width:560px;}
   table.pzps thead th{text-align:center;font-weight:700;color:#fff;background:var(--pzps-blue);padding:10px 8px;}
   table.pzps tbody td{padding:10px 8px;text-align:center;border-bottom:1px solid #eef2f6;}
   table.pzps tbody tr:nth-child(even){background:var(--row-alt);}
-  /* neutralne zaznaczenie rozegranych */
-  tr.played-row{background:var(--played) !important;}
-  /* chipy */
-  .chip{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;line-height:1;border:1px solid var(--badge-border);background:var(--badge);color:#334155;white-space:nowrap}
-  .chip-ghost{background:transparent;border-color:var(--badge-border);color:#475569}
-  .chip-cat{background:#f9fafb;border-color:#e5e7eb;color:#334155}
-  .muted{color:var(--muted);font-size:13px;margin-top:8px}
+  tr.win-row{background:var(--win)!important;}
+  tr.loss-row{background:var(--loss)!important;}
 </style>
 </head>
 <body>
-
 <header class="site-header">
   <div class="wrap">
     <h1 class="site-title">Tabele i terminarz – siatkówka młodzieżowa</h1>
   </div>
 </header>
-
 <main class="container">
-  <!-- MŁODZIK -->
   <section class="card">
     <div class="card-header"><h2>MŁODZIK</h2></div>
     <div class="card-body">
       <div class="table-wrap">
         <table class="pzps" id="tbl-mlodzik">
-          <thead>
-            <tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Małe pkt</th><th>Punkty</th></tr>
-          </thead>
+          <thead><tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Małe pkt</th><th>Punkty</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
-      <div class="muted">3:0/3:1 → 3 pkt; 3:2 → 2 pkt (zwycięzca) i 1 pkt (pokonany). Przy równej liczbie punktów decydują małe punkty.</div>
     </div>
   </section>
-
-  <!-- MŁODZICZKA -->
   <section class="card">
     <div class="card-header"><h2>MŁODZICZKA</h2></div>
     <div class="card-body">
       <div class="table-wrap">
         <table class="pzps" id="tbl-mlodziczka">
-          <thead>
-            <tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Małe pkt</th><th>Punkty</th></tr>
-          </thead>
+          <thead><tr><th>Drużyna</th><th>M</th><th>W</th><th>P</th><th>Małe pkt</th><th>Punkty</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
     </div>
   </section>
-
-  <!-- TERMINARZ -->
   <section class="card">
     <div class="card-header"><h2>TERMINARZ</h2></div>
     <div class="card-body">
       <div class="table-wrap">
         <table class="pzps" id="tbl-terminarz">
-          <thead>
-            <tr><th>Data</th><th>Gospodarz</th><th>Gość</th><th>Status / Wynik</th><th>Sety</th><th>Kategoria</th></tr>
-          </thead>
+          <thead><tr><th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Sety</th><th>Kategoria</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
-      <div class="muted">Mecze nadchodzące są na górze; rozegrane oznaczone neutralnym tłem i chipem „Rozegrany”.</div>
     </div>
   </section>
 </main>
-
 <script>
-  // Podmień na swój aktualny /exec (Web App → Anyone)
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyMbFRv71q3XjOJ5JQmSWlQp1fXrqvnFa9hdooq9RJ2hY7RLHC1FiE3BC9q-Wwqg/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyMbFRv71q3XjOJ5JQmSWlQp1fXrqvnFa9hdooq9RJ2hY7RLHC1FiE3BC9q-Wwqg/exec";
 
-  const td = (text, left=false) => {
-    const el = document.createElement('td');
-    if (left) el.style.textAlign = 'left';
-    el.textContent = (text ?? '');
-    return el;
-  };
+function createCell(text, opts={}) {
+  const td = document.createElement('td');
+  if (opts.left) td.style.textAlign = 'left';
+  td.textContent = text ?? '';
+  return td;
+}
 
-  const chip = (label, cls='chip') => {
-    const s = document.createElement('span');
-    s.className = cls;
-    s.textContent = label;
-    return s;
-  };
+function formatDate(d) {
+  const dt = new Date(d);
+  return !isNaN(dt) ? dt.toLocaleDateString('pl-PL') : d;
+}
 
-  const fmtDate = (d) => {
-    const dt = new Date(d);
-    if (!isNaN(dt)) return dt.toLocaleDateString('pl-PL');
-    return d ?? '';
-  };
+async function loadData(){
+  try {
+    const res = await fetch(WEB_APP_URL, { cache:'no-store' });
+    const data = await res.json();
 
-  function render(data){
-    // ===== MŁODZIK =====
+    // Młodzik
     const tbM = document.querySelector('#tbl-mlodzik tbody');
     tbM.innerHTML = '';
-    (data.tabela_mlodzik||[]).forEach(r=>{
-      const tr=document.createElement('tr');
-      tr.appendChild(td(r.team,true));
-      tr.appendChild(td(r.matches));
-      tr.appendChild(td(r.wins));
-      tr.appendChild(td(r.losses));
-      tr.appendChild(td(r.smallPoints));
-      tr.appendChild(td(r.scoreTable));
+    data.tabela_mlodzik.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.appendChild(createCell(row.team, {left:true}));
+      tr.appendChild(createCell(row.matches));
+      tr.appendChild(createCell(row.wins));
+      tr.appendChild(createCell(row.losses));
+      tr.appendChild(createCell(row.smallPoints));
+      tr.appendChild(createCell(row.scoreTable));
       tbM.appendChild(tr);
     });
 
-    // ===== MŁODZICZKA =====
+    // Młodziczka
     const tbF = document.querySelector('#tbl-mlodziczka tbody');
     tbF.innerHTML = '';
-    (data.tabela_mlodziczka||[]).forEach(r=>{
-      const tr=document.createElement('tr');
-      tr.appendChild(td(r.team,true));
-      tr.appendChild(td(r.matches));
-      tr.appendChild(td(r.wins));
-      tr.appendChild(td(r.losses));
-      tr.appendChild(td(r.smallPoints));
-      tr.appendChild(td(r.scoreTable));
+    data.tabela_mlodziczka.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.appendChild(createCell(row.team, {left:true}));
+      tr.appendChild(createCell(row.matches));
+      tr.appendChild(createCell(row.wins));
+      tr.appendChild(createCell(row.losses));
+      tr.appendChild(createCell(row.smallPoints));
+      tr.appendChild(createCell(row.scoreTable));
       tbF.appendChild(tr);
     });
 
-    // ===== TERMINARZ =====
+    // Terminarz (z filtrem pustych wierszy)
     const tbT = document.querySelector('#tbl-terminarz tbody');
     tbT.innerHTML = '';
+    data.terminarz
+      .filter(row => row[0] && row[1] && row[2]) // usuń puste rekordy
+      .forEach(row => {
+        const tr = document.createElement('tr');
+        const [date, home, away, score, sets, cat] = row;
 
-    // sort: najpierw nadchodzące (bez wyniku), potem rozegrane; w środku po dacie rosnąco
-    const list = (data.terminarz||[]).slice().sort((a,b)=>{
-      const hasA = !!(a && a[3]); const hasB = !!(b && b[3]);
-      if (hasA !== hasB) return hasA - hasB;
-      const dA = new Date(a && a[0]); const dB = new Date(b && b[0]);
-      return (dA?.getTime()||0) - (dB?.getTime()||0);
-    });
-
-    list.forEach(row=>{
-      const [date, home, away, score, sets, cat] = row;
-      const tr = document.createElement('tr');
-
-      // status
-      const statusTd = document.createElement('td');
-      if (score && score.includes(':')) {
-        // rozegrany
-        tr.classList.add('played-row');
-        // chip „Rozegrany” + wynik w neutralnym badge
-        statusTd.appendChild(chip('Rozegrany','chip'));
-        statusTd.appendChild(document.createTextNode(' '));
-        statusTd.appendChild(chip(score,'chip-ghost'));
-        // jeśli 3:2 → tie-break (neutralny)
-        const parts = score.split(':').map(Number);
-        if (parts[0] === 3 && parts[1] === 2 || parts[0] === 2 && parts[1] === 3){
-          statusTd.appendChild(document.createTextNode(' '));
-          statusTd.appendChild(chip('Tie-break','chip-ghost'));
+        if (score && score.includes(':')) {
+          const [sH, sA] = score.split(':').map(Number);
+          if (!isNaN(sH) && !isNaN(sA)) {
+            if (sH > sA) tr.classList.add('win-row');
+            else if (sH < sA) tr.classList.add('loss-row');
+          }
         }
-      } else {
-        // nadchodzący
-        statusTd.appendChild(chip('Nadchodzący','chip-ghost'));
-      }
 
-      tr.appendChild(td(fmtDate(date)));
-      tr.appendChild(td(home));
-      tr.appendChild(td(away));
-      tr.appendChild(statusTd);
-      tr.appendChild(td(sets || ''));
-      const catTd = document.createElement('td');
-      catTd.appendChild(chip(cat || '', 'chip chip-cat'));
-      tr.appendChild(catTd);
-
-      tbT.appendChild(tr);
-    });
+        tr.appendChild(createCell(formatDate(date)));
+        tr.appendChild(createCell(home));
+        tr.appendChild(createCell(away));
+        tr.appendChild(createCell(score));
+        tr.appendChild(createCell(sets));
+        tr.appendChild(createCell(cat));
+        tbT.appendChild(tr);
+      });
+  } catch (err) {
+    console.error("Błąd wczytywania danych:", err);
   }
+}
 
-  // JSONP: doczepiamy <script src="...&callback=onData">
-  function onData(data){ render(data); }
-  (function(){
-    const s = document.createElement('script');
-    s.src = WEB_APP_URL + '?action=get&callback=onData';
-    document.body.appendChild(s);
-  })();
+loadData();
 </script>
 </body>
 </html>
