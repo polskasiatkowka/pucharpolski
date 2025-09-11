@@ -1,191 +1,365 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tabele i terminarz – siatkówka</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Rozgrywki młodzieżowe – terminarze i rankingi</title>
 <style>
   :root{
-    --pzps-blue:#0d3b66;
-    --pzps-gold:#c9a227;
+    --blue:#0d3b66;
+    --gold:#c9a227;
+    --bg:#f2f5f9;
+    --row:#ffffff;
     --row-alt:#f7f8fa;
-    --text:#1c1c1c;
     --muted:#6b7280;
-    --win:#e7f6ec;
-    --loss:#fdecec;
+    --text:#111827;
+    --border:#e8edf3;
   }
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:#f2f5f9;}
-  header.site-header{background:var(--pzps-blue);color:#fff;padding:18px 16px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
-  .site-header .wrap{max-width:1100px;margin:0 auto;}
-  .site-title{margin:0;font-weight:700;font-size:clamp(18px,2.3vw,24px);}
-  .container{max-width:1100px;margin:28px auto;padding:0 16px;}
-  .card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 6px 18px rgba(13,59,102,.08);margin-bottom:20px;border:1px solid #e8edf3;}
-  .card-header{background:linear-gradient(180deg, #114676 0%, #0d3b66 100%);color:#fff;padding:14px 16px;border-bottom:3px solid var(--pzps-gold);}
-  .card-header h2{margin:0;font-size:clamp(16px,2vw,20px);}
-  .card-body{padding:12px 14px;}
-  .table-wrap{overflow-x:auto;}
-  table.pzps{width:100%;border-collapse:collapse;min-width:560px;}
-  table.pzps thead th{text-align:center;font-weight:700;color:#fff;background:var(--pzps-blue);padding:10px 8px;}
-  table.pzps tbody td{padding:10px 8px;text-align:center;border-bottom:1px solid #eef2f6;}
-  table.pzps tbody tr:nth-child(even){background:var(--row-alt);}
-  .chip{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid transparent;}
-  .chip-cat{background:#f9fafb;color:#334155;border-color:#e5e7eb;}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);}
+  header{background:var(--blue);color:#fff;padding:18px 16px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  header .wrap{max-width:1200px;margin:0 auto;}
+  h1{margin:0;font-size:clamp(18px,2.3vw,24px);font-weight:700;}
+
+  .container{max-width:1200px;margin:24px auto;padding:0 16px;}
+
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .tab-btn{
+    border:1px solid var(--border); background:#fff; color:#0d3b66;
+    padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700;
+  }
+  .tab-btn.active{background:linear-gradient(180deg,#114676 0%, #0d3b66 100%); color:#fff; border-color:#0d3b66}
+
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  @media (max-width:900px){ .grid{grid-template-columns:1fr;} }
+
+  .card{
+    background:#fff; border:1px solid var(--border); border-radius:12px;
+    box-shadow:0 6px 18px rgba(13,59,102,.08); overflow:hidden;
+  }
+  .card-header{
+    background:linear-gradient(180deg,#114676 0%, #0d3b66 100%);
+    color:#fff; padding:12px 14px; border-bottom:3px solid var(--gold);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .card-header h2{margin:0;font-size:16px}
+  .card-body{padding:12px 14px}
+  .subttl{margin:6px 0 10px; color:var(--muted); font-weight:600; font-size:14px}
+
+  .table-wrap{overflow-x:auto}
+  table{width:100%; border-collapse:collapse; min-width:680px}
+  thead th{background:var(--blue); color:#fff; padding:9px 8px; text-align:center}
+  tbody td{padding:9px 8px; text-align:center; border-bottom:1px solid var(--border); background:#fff}
+  tbody tr:nth-child(even) td{background:var(--row-alt)}
+  td.left{text-align:left}
+  td.badge{text-align:center}
+  .note{color:var(--muted); font-size:12px; margin-top:6px}
+
+  .proto a{font-weight:700; text-decoration:none}
 </style>
 </head>
 <body>
-<header class="site-header">
+<header>
   <div class="wrap">
-    <h1 class="site-title">Tabele, terminarze i rankingi – siatkówka młodzieżowa</h1>
+    <h1>Rozgrywki młodzieżowe – terminarze i rankingi</h1>
   </div>
 </header>
+
 <main class="container">
+  <!-- 4 przyciski/zakładki -->
+  <div class="tabs">
+    <button class="tab-btn active" data-view="m_elim">Młodzik – Eliminacje</button>
+    <button class="tab-btn" data-view="m_final">Młodzik – Finał</button>
+    <button class="tab-btn" data-view="f_elim">Młodziczka – Eliminacje</button>
+    <button class="tab-btn" data-view="f_final">Młodziczka – Finał</button>
+  </div>
 
-  <!-- Ranking Młodzik -->
-  <section class="card">
-    <div class="card-header"><h2>Ranking – Młodzik</h2></div>
-    <div class="card-body">
-      <div class="table-wrap">
-        <table class="pzps" id="tbl-ranking-mlodzik">
-          <thead><tr><th>Drużyna</th><th>Punkty</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- Ranking Młodziczka -->
-  <section class="card">
-    <div class="card-header"><h2>Ranking – Młodziczka</h2></div>
-    <div class="card-body">
-      <div class="table-wrap">
-        <table class="pzps" id="tbl-ranking-mlodziczka">
-          <thead><tr><th>Drużyna</th><th>Punkty</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- Terminarz Młodzik -->
-  <section class="card">
-    <div class="card-header"><h2>Terminarz – Młodzik</h2></div>
-    <div class="card-body">
-      <div class="table-wrap">
-        <table class="pzps" id="tbl-terminarz-mlodzik">
-          <thead><tr><th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Sety</th><th>Grupa</th><th>Protokół</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- Terminarz Młodziczka -->
-  <section class="card">
-    <div class="card-header"><h2>Terminarz – Młodziczka</h2></div>
-    <div class="card-body">
-      <div class="table-wrap">
-        <table class="pzps" id="tbl-terminarz-mlodziczka">
-          <thead><tr><th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Sety</th><th>Grupa</th><th>Protokół</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
+  <!-- Kontener, do którego dynamicznie wstrzykujemy widoki -->
+  <div id="view"></div>
 </main>
 
 <script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw_qZZONOjmKCvve27HuOJSm7waQcbXro0fKg1PX0E5Yg_dL0nkldZCKScyUo4WqUcK/exec?action=get";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwqtVt7dlMbDBqcUtpNiA_nFyj0nhiYf1CVlmmZNmj5aAt1punONexLjWRUMbBuzpXD/exec?action=get";
 
-function createCell(text, opts={}) {
-  const td = document.createElement('td');
-  if (opts.left) td.style.textAlign = 'left';
-  td.textContent = text ?? '';
-  return td;
-}
-function createLinkCell(value) {
-  const td = document.createElement('td');
-  const v = (value || '').toString().trim();
-  if (isUrl(v)) {
-    const a = document.createElement('a');
-    a.href = v; a.target = "_blank"; a.rel = "noopener";
-    a.textContent = "📄 protokół";
-    td.appendChild(a);
-  } else {
-    td.textContent = '—';
-  }
-  return td;
-}
+let DATA = null;
+
 function isUrl(v){
-  try{ const u = new URL(v); return /^https?:$/.test(u.protocol); }catch(e){ return false; }
+  try{ const u = new URL((v||'').trim()); return /^https?:$/.test(u.protocol); }catch(e){ return false; }
 }
-function formatDate(d) {
-  const dt = new Date(d);
-  return !isNaN(dt) ? dt.toLocaleDateString('pl-PL') : (d || '');
+function parseDateAny(v){
+  if (v instanceof Date && !isNaN(v)) return v;
+  if (typeof v === 'string' && v.includes('T')) {
+    const d = new Date(v);
+    if (!isNaN(d)) return d;
+  }
+  if (typeof v === 'string' && v.includes('.')){
+    const [d,m,y] = v.split('.').map(Number);
+    const dd = new Date(y, (m||1)-1, d||1);
+    if (!isNaN(dd)) return dd;
+  }
+  const d = new Date(v);
+  return isNaN(d) ? null : d;
+}
+function fmtPL(v){
+  const d = parseDateAny(v);
+  return d ? d.toLocaleDateString('pl-PL') : (v ?? '');
 }
 
-// Render jednej tabeli z filtrowaniem po kolumnie „Grupa”
-function renderTerminarz(tbodySelector, rows, grupaWanted){
-  const tb = document.querySelector(tbodySelector);
-  tb.innerHTML = '';
-  rows
-    .filter(r => r && (r[1] || r[2]))              // ma gospodarza/gościa
-    .filter(r => (r[5] || '').trim() === grupaWanted) // kol. 5 = Grupa
-    .sort((a,b)=> new Date(a[0]).getTime()-new Date(b[0]).getTime())
-    .forEach(row=>{
-      // [Data, Gospodarz, Gość, Wynik, Sety, Grupa, Protokół]
-      const [date, home, away, score, sets, grupa, protokol] = row;
-      const tr = document.createElement('tr');
-      tr.appendChild(createCell(formatDate(date)));
-      tr.appendChild(createCell(home, {left:true}));
-      tr.appendChild(createCell(away, {left:true}));
-      tr.appendChild(createCell(score || ''));
-      tr.appendChild(createCell(sets || '', {left:true}));
-      tr.appendChild(createCell(grupa || ''));
-      tr.appendChild(createLinkCell(protokol));
-      tb.appendChild(tr);
+// Parsowanie setów: "25:23 30:28 29:31 25:23"
+function parseSets(setsStr){
+  const txt = (setsStr||'').toString().trim();
+  if (!txt) return {hSets:0,aSets:0,hPts:0,aPts:0};
+  const parts = txt.split(/\s+/);
+  let hSets=0,aSets=0,hPts=0,aPts=0;
+  parts.forEach(p=>{
+    const [h,a] = p.split(':').map(x=>parseInt(x,10));
+    if (isNaN(h)||isNaN(a)) return;
+    hPts += h; aPts += a;
+    if (h>a) hSets++; else if (a>h) aSets++;
+  });
+  return {hSets,aSets,hPts,aPts};
+}
+
+// Punkty meczowe wg siatkówki
+function matchPoints(hSets,aSets){
+  // zwycięzca 3:0/3:1 → 3 pkt, zwycięzca 3:2 → 2 pkt, przegrany 2:3 → 1 pkt, reszta 0
+  if (hSets === 3 && aSets <= 1) return {home:3, away:0};
+  if (hSets === 3 && aSets === 2) return {home:2, away:1};
+  if (aSets === 3 && hSets <= 1) return {home:0, away:3};
+  if (aSets === 3 && hSets === 2) return {home:1, away:2};
+  return {home:0, away:0};
+}
+
+// Liczenie tabeli dla listy meczów (rows: [date, home, away, score, sets, group, proto])
+function computeTable(rows){
+  const teams = {};
+  function ensure(name){
+    if (!teams[name]) teams[name] = {
+      team:name, matches:0, wins:0, losses:0,
+      setsFor:0, setsAgainst:0, smallFor:0, smallAgainst:0,
+      points:0 // punkty meczowe
+    };
+    return teams[name];
+  }
+
+  rows.forEach(r=>{
+    const [date, home, away, score, setsStr] = r;
+    if (!home || !away) return;
+
+    const {hSets,aSets,hPts,aPts} = parseSets(setsStr);
+    const {home:hp, away:ap} = matchPoints(hSets,aSets);
+
+    const H = ensure(home);
+    const A = ensure(away);
+
+    // tylko jeśli mecz rozegrany (mamy jakiekolwiek sety)
+    if ((hSets+aSets) > 0){
+      H.matches++; A.matches++;
+      if (hSets > aSets){ H.wins++; A.losses++; }
+      else if (aSets > hSets){ A.wins++; H.losses++; }
+      H.setsFor += hSets; H.setsAgainst += aSets;
+      A.setsFor += aSets; A.setsAgainst += hSets;
+
+      H.smallFor += hPts; H.smallAgainst += aPts;
+      A.smallFor += aPts; A.smallAgainst += hPts;
+
+      H.points += hp; A.points += ap;
+    }
+  });
+
+  // sort: punkty meczowe → różnica małych punktów → stosunek setów → nazwa
+  const arr = Object.values(teams).map(t=>{
+    const smallDiff = t.smallFor - t.smallAgainst;
+    const setRatio = t.setsAgainst === 0 ? (t.setsFor>0?Infinity:0) : t.setsFor/t.setsAgainst;
+    return {...t, smallDiff, setRatio};
+  });
+
+  arr.sort((a,b)=>{
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.smallDiff !== a.smallDiff) return b.smallDiff - a.smallDiff;
+    if (b.setsFor !== a.setsFor) return b.setsFor - a.setsFor; // dodatkowy
+    if (b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;
+    return a.team.localeCompare(b.team,'pl');
+  });
+
+  return arr;
+}
+
+// Bonus za klasyfikację finału (1→15, 2→14, ..., 15→1; powyżej 15 też min 1)
+function classificationBonus(place){
+  const p = 16 - place;
+  return p >= 1 ? p : 1;
+}
+
+function makeTableEl(headers, rows){
+  const wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  const table = document.createElement('table');
+  const thead = document.createElement('thead');
+  const trh = document.createElement('tr');
+  headers.forEach(h=>{
+    const th = document.createElement('th'); th.textContent=h; trh.appendChild(th);
+  });
+  thead.appendChild(trh);
+  table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    r.forEach((cell, idx)=>{
+      const td = document.createElement('td');
+      if (cell && cell.__html){ td.innerHTML = cell.__html; }
+      else { td.textContent = cell ?? ''; }
+      if (idx===0 && typeof cell === 'string') td.classList.add('left');
+      tr.appendChild(td);
     });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  return wrap;
 }
 
-async function loadData(){
-  const res = await fetch(WEB_APP_URL, { cache:'no-store' });
-  const data = await res.json();
+function renderTerminarzBlock(title, rows){
+  const card = document.createElement('div'); card.className='card';
+  const head = document.createElement('div'); head.className='card-header';
+  head.innerHTML = `<h2>${title}</h2>`;
+  const body = document.createElement('div'); body.className='card-body';
 
-  // Sklej wszystkie fazy w jedną listę dla każdej kategorii
-  const allM = []
-    .concat(data.m_elim || [], data.m_liga || [], data.m_final || []);
-  const allF = []
-    .concat(data.f_elim || [], data.f_liga || [], data.f_final || []);
+  const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Grupa','Protokół'];
+  const mapped = rows.slice().sort((a,b)=>{
+    const dA = parseDateAny(a[0])?.getTime()||0;
+    const dB = parseDateAny(b[0])?.getTime()||0;
+    return dA - dB;
+  }).map(r=>{
+    const proto = isUrl(r[6]) ? {__html:`<a href="${r[6]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
+    return [fmtPL(r[0]), r[1], r[2], r[3]||'', r[4]||'', r[5]||'', proto];
+  });
 
-  // Render
-  renderTerminarz('#tbl-terminarz-mlodzik tbody', allM, 'Mlodzik');
-  renderTerminarz('#tbl-terminarz-mlodziczka tbody', allF, 'Mlodziczka');
+  body.appendChild(makeTableEl(headers, mapped));
+  card.appendChild(head); card.appendChild(body);
+  return card;
+}
 
-  // Rankingi (jeśli masz sekcje rankingowe)
-  const tbRM = document.querySelector('#tbl-ranking-mlodzik tbody');
-  if (tbRM){
-    tbRM.innerHTML = '';
-    (data.ranking_mlodzik || []).forEach(r=>{
-      const tr = document.createElement('tr');
-      tr.appendChild(createCell(r.team, {left:true}));
-      tr.appendChild(createCell(r.points));
-      tbRM.appendChild(tr);
+function renderRankingBlock(title, tableRows, isFinal=false){
+  const card = document.createElement('div'); card.className='card';
+  const head = document.createElement('div'); head.className='card-header';
+  head.innerHTML = `<h2>${title}</h2>`;
+  const body = document.createElement('div'); body.className='card-body';
+
+  let headers, rows;
+  if (!isFinal){
+    headers = ['Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty'];
+    rows = tableRows.map(t=>[
+      t.team,
+      t.matches,
+      t.wins,
+      t.losses,
+      `${t.setsFor}:${t.setsAgainst}`,
+      `${t.smallFor}:${t.smallAgainst}  (${t.smallDiff>=0?'+':''}${t.smallDiff})`,
+      t.points
+    ]);
+  } else {
+    headers = ['Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty meczowe','Klasyfikacyjne','Razem'];
+    rows = tableRows.map((t,idx)=>{
+      const place = idx+1;
+      const bonus = classificationBonus(place);
+      const total = t.points + bonus;
+      return [
+        t.team,
+        t.matches,
+        t.wins,
+        t.losses,
+        `${t.setsFor}:${t.setsAgainst}`,
+        `${t.smallFor}:${t.smallAgainst}  (${t.smallDiff>=0?'+':''}${t.smallDiff})`,
+        t.points,
+        bonus,
+        total
+      ];
     });
   }
-  const tbRF = document.querySelector('#tbl-ranking-mlodziczka tbody');
-  if (tbRF){
-    tbRF.innerHTML = '';
-    (data.ranking_mlodziczka || []).forEach(r=>{
-      const tr = document.createElement('tr');
-      tr.appendChild(createCell(r.team, {left:true}));
-      tr.appendChild(createCell(r.points));
-      tbRF.appendChild(tr);
-    });
+
+  body.appendChild(makeTableEl(headers, rows));
+  card.appendChild(head); card.appendChild(body);
+  return card;
+}
+
+function groupByABCD(rows){
+  const out = {A:[],B:[],C:[],D:[]};
+  rows.forEach(r=>{
+    const g = (r[5]||'').toString().trim().toUpperCase();
+    if (out[g]) out[g].push(r);
+  });
+  return out;
+}
+
+function renderElimView(allRows, label){ // label: "Młodzik" / "Młodziczka"
+  const groups = groupByABCD(allRows);
+  const view = document.createElement('div');
+
+  ['A','B','C','D'].forEach(g=>{
+    const rows = groups[g] || [];
+    const table = computeTable(rows);
+    const grid = document.createElement('div'); grid.className='grid';
+
+    const term = renderTerminarzBlock(`${label} – Eliminacje – Grupa ${g}`, rows);
+    const rank = renderRankingBlock(`Ranking – ${label} – Grupa ${g}`, table, false);
+
+    grid.appendChild(term); grid.appendChild(rank);
+    view.appendChild(grid);
+  });
+
+  return view;
+}
+
+function renderFinalView(allRows, label){
+  // W finale brak grupy; liczymy całość + dodajemy punkty klasyfikacyjne 15..1
+  const view = document.createElement('div');
+  const grid = document.createElement('div'); grid.className='grid';
+
+  const term = renderTerminarzBlock(`${label} – Finał`, allRows);
+  const table = computeTable(allRows);
+  const rank = renderRankingBlock(`Ranking – ${label} – Finał (z klasyfikacją 15..1)`, table, true);
+
+  grid.appendChild(term); grid.appendChild(rank);
+  view.appendChild(grid);
+  return view;
+}
+
+function setActive(btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function renderView(kind){
+  const mount = document.getElementById('view');
+  mount.innerHTML = '';
+  if (!DATA) return;
+
+  if (kind === 'm_elim') {
+    mount.appendChild(renderElimView(DATA.m_elim||[], 'Młodzik'));
+  } else if (kind === 'm_final') {
+    mount.appendChild(renderFinalView(DATA.m_final||[], 'Młodzik'));
+  } else if (kind === 'f_elim') {
+    mount.appendChild(renderElimView(DATA.f_elim||[], 'Młodziczka'));
+  } else if (kind === 'f_final') {
+    mount.appendChild(renderFinalView(DATA.f_final||[], 'Młodziczka'));
   }
 }
 
-loadData();
+async function boot(){
+  const res = await fetch(WEB_APP_URL, {cache:'no-store'});
+  DATA = await res.json();
+
+  // Podłącz nawigację
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      setActive(btn);
+      renderView(btn.dataset.view);
+    });
+  });
+
+  // start: Młodzik – Eliminacje
+  renderView('m_elim');
+}
+boot();
 </script>
-
 </body>
 </html>
