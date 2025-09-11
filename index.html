@@ -100,84 +100,92 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw_qZZONOjmKCvve27H
 function createCell(text, opts={}) {
   const td = document.createElement('td');
   if (opts.left) td.style.textAlign = 'left';
-  if (opts.link) {
+  td.textContent = text ?? '';
+  return td;
+}
+function createLinkCell(value) {
+  const td = document.createElement('td');
+  const v = (value || '').toString().trim();
+  if (isUrl(v)) {
     const a = document.createElement('a');
-    a.href = text; a.textContent = "protokół"; a.target="_blank";
+    a.href = v; a.target = "_blank"; a.rel = "noopener";
+    a.textContent = "📄 protokół";
     td.appendChild(a);
   } else {
-    td.textContent = text ?? '';
+    td.textContent = '—';
   }
   return td;
 }
-
+function isUrl(v){
+  try{ const u = new URL(v); return /^https?:$/.test(u.protocol); }catch(e){ return false; }
+}
 function formatDate(d) {
   const dt = new Date(d);
-  return !isNaN(dt) ? dt.toLocaleDateString('pl-PL') : d;
+  return !isNaN(dt) ? dt.toLocaleDateString('pl-PL') : (d || '');
+}
+
+// Render jednej tabeli z filtrowaniem po kolumnie „Grupa”
+function renderTerminarz(tbodySelector, rows, grupaWanted){
+  const tb = document.querySelector(tbodySelector);
+  tb.innerHTML = '';
+  rows
+    .filter(r => r && (r[1] || r[2]))              // ma gospodarza/gościa
+    .filter(r => (r[5] || '').trim() === grupaWanted) // kol. 5 = Grupa
+    .sort((a,b)=> new Date(a[0]).getTime()-new Date(b[0]).getTime())
+    .forEach(row=>{
+      // [Data, Gospodarz, Gość, Wynik, Sety, Grupa, Protokół]
+      const [date, home, away, score, sets, grupa, protokol] = row;
+      const tr = document.createElement('tr');
+      tr.appendChild(createCell(formatDate(date)));
+      tr.appendChild(createCell(home, {left:true}));
+      tr.appendChild(createCell(away, {left:true}));
+      tr.appendChild(createCell(score || ''));
+      tr.appendChild(createCell(sets || '', {left:true}));
+      tr.appendChild(createCell(grupa || ''));
+      tr.appendChild(createLinkCell(protokol));
+      tb.appendChild(tr);
+    });
 }
 
 async function loadData(){
-  try {
-    const res = await fetch(WEB_APP_URL, { cache:'no-store' });
-    const data = await res.json();
+  const res = await fetch(WEB_APP_URL, { cache:'no-store' });
+  const data = await res.json();
 
-    // Ranking Młodzik
-    const tbRM = document.querySelector('#tbl-ranking-mlodzik tbody');
+  // Sklej wszystkie fazy w jedną listę dla każdej kategorii
+  const allM = []
+    .concat(data.m_elim || [], data.m_liga || [], data.m_final || []);
+  const allF = []
+    .concat(data.f_elim || [], data.f_liga || [], data.f_final || []);
+
+  // Render
+  renderTerminarz('#tbl-terminarz-mlodzik tbody', allM, 'Mlodzik');
+  renderTerminarz('#tbl-terminarz-mlodziczka tbody', allF, 'Mlodziczka');
+
+  // Rankingi (jeśli masz sekcje rankingowe)
+  const tbRM = document.querySelector('#tbl-ranking-mlodzik tbody');
+  if (tbRM){
     tbRM.innerHTML = '';
-    (data.ranking_mlodzik || []).forEach(row => {
+    (data.ranking_mlodzik || []).forEach(r=>{
       const tr = document.createElement('tr');
-      tr.appendChild(createCell(row.team, {left:true}));
-      tr.appendChild(createCell(row.points));
+      tr.appendChild(createCell(r.team, {left:true}));
+      tr.appendChild(createCell(r.points));
       tbRM.appendChild(tr);
     });
-
-    // Ranking Młodziczka
-    const tbRF = document.querySelector('#tbl-ranking-mlodziczka tbody');
+  }
+  const tbRF = document.querySelector('#tbl-ranking-mlodziczka tbody');
+  if (tbRF){
     tbRF.innerHTML = '';
-    (data.ranking_mlodziczka || []).forEach(row => {
+    (data.ranking_mlodziczka || []).forEach(r=>{
       const tr = document.createElement('tr');
-      tr.appendChild(createCell(row.team, {left:true}));
-      tr.appendChild(createCell(row.points));
+      tr.appendChild(createCell(r.team, {left:true}));
+      tr.appendChild(createCell(r.points));
       tbRF.appendChild(tr);
     });
-
-    // Terminarz Młodzik
-    const tbTM = document.querySelector('#tbl-terminarz-mlodzik tbody');
-    tbTM.innerHTML = '';
-    (data.m_elim || []).forEach(row => {
-      const [date, home, away, score, sets, group, protocol] = row;
-      const tr = document.createElement('tr');
-      tr.appendChild(createCell(formatDate(date)));
-      tr.appendChild(createCell(home));
-      tr.appendChild(createCell(away));
-      tr.appendChild(createCell(score));
-      tr.appendChild(createCell(sets));
-      tr.appendChild(createCell(group));
-      tr.appendChild(createCell(protocol, {link:true}));
-      tbTM.appendChild(tr);
-    });
-
-    // Terminarz Młodziczka
-    const tbTF = document.querySelector('#tbl-terminarz-mlodziczka tbody');
-    tbTF.innerHTML = '';
-    (data.f_elim || []).forEach(row => {
-      const [date, home, away, score, sets, group, protocol] = row;
-      const tr = document.createElement('tr');
-      tr.appendChild(createCell(formatDate(date)));
-      tr.appendChild(createCell(home));
-      tr.appendChild(createCell(away));
-      tr.appendChild(createCell(score));
-      tr.appendChild(createCell(sets));
-      tr.appendChild(createCell(group));
-      tr.appendChild(createCell(protocol, {link:true}));
-      tbTF.appendChild(tr);
-    });
-
-  } catch (err) {
-    console.error("Błąd wczytywania danych:", err);
   }
 }
 
 loadData();
 </script>
+
 </body>
 </html>
