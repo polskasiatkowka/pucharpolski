@@ -1,91 +1,170 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tabele i Terminarze</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Rozgrywki – terminarze</title>
 <style>
-  body { font-family: Arial, sans-serif; background:#f2f5f9; margin:0; }
-  header { background:#0d3b66; color:#fff; padding:16px; }
-  h1 { margin:0; font-size:20px; }
-  .tabs { display:flex; background:#eee; }
-  .tab { flex:1; text-align:center; padding:10px; cursor:pointer; }
-  .tab.active { background:#0d3b66; color:#fff; font-weight:bold; }
-  section { padding:16px; }
-  table { width:100%; border-collapse:collapse; margin-bottom:20px; }
-  th,td { border:1px solid #ccc; padding:8px; text-align:center; }
-  th { background:#0d3b66; color:white; }
+  :root{
+    --pzps-blue:#0d3b66; --pzps-gold:#c9a227; --row-alt:#f7f8fa;
+    --text:#1c1c1c; --muted:#6b7280; --win:#e7f6ec; --loss:#fdecec;
+  }
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:#f2f5f9;}
+  header{background:var(--pzps-blue);color:#fff;padding:16px;}
+  h1{margin:0;font-size:clamp(18px,2.2vw,24px);}
+  .container{max-width:1100px;margin:24px auto;padding:0 16px;}
+  .card{background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e8edf3;box-shadow:0 6px 18px rgba(13,59,102,.08);margin-bottom:18px;}
+  .card-header{background:linear-gradient(180deg,#114676 0%,#0d3b66 100%);color:#fff;padding:12px 16px;border-bottom:3px solid var(--pzps-gold);}
+  .card-header h2{margin:0;font-size:clamp(16px,2vw,20px);}
+  .card-body{padding:12px 14px;}
+  .status{color:var(--muted);margin:6px 0 12px;}
+  .table-wrap{overflow-x:auto;}
+  table.pzps{width:100%;border-collapse:collapse;min-width:760px;}
+  table.pzps thead th{background:var(--pzps-blue);color:#fff;padding:10px 8px;text-align:center;}
+  table.pzps tbody td{padding:10px 8px;text-align:center;border-bottom:1px solid #eef2f6;}
+  table.pzps tbody tr:nth-child(even){background:var(--row-alt);}
+  td.left{text-align:left;}
+  a.link{color:#0d3b66;text-decoration:underline;}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;}
+  .pill{border:1px solid #dbe3ec;background:#fff;border-radius:999px;padding:6px 10px;font-size:14px;cursor:pointer;}
+  .pill.active{background:#0d3b66;color:#fff;border-color:#0d3b66;}
 </style>
 </head>
 <body>
-
 <header>
-  <h1>Rozgrywki młodzieżowe</h1>
+  <h1>Rozgrywki – terminarze (M/F, wszystkie fazy)</h1>
 </header>
 
-<div class="tabs">
-  <div class="tab active" onclick="switchCategory('Mlodzik')">Młodzik</div>
-  <div class="tab" onclick="switchCategory('Mlodziczka')">Młodziczka</div>
-</div>
+<main class="container">
+  <div class="card">
+    <div class="card-header"><h2>Terminarz</h2></div>
+    <div class="card-body">
+      <div id="status" class="status">Ładowanie danych…</div>
 
-<section>
-  <h2 id="catTitle">Młodzik</h2>
+      <!-- Proste filtry: kategoria/faza (budowane dynamicznie z danych) -->
+      <div class="filters" id="filters"></div>
 
-  <h3>Terminarz eliminacyjny</h3>
-  <table id="tbl-terminarz">
-    <thead><tr><th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Sety</th></tr></thead>
-    <tbody></tbody>
-  </table>
+      <div class="table-wrap">
+        <table class="pzps" id="tbl-terminarz">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Gospodarz</th>
+              <th>Gość</th>
+              <th>Wynik</th>
+              <th>Sety</th>
+              <th>Kategoria/Faza</th>
+              <th>Protokół</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
 
-  <h3>Terminarz ligowy</h3>
-  <table id="tbl-liga-terminarz">
-    <thead><tr><th>Data</th><th>Gospodarz</th><th>Gość</th><th>Wynik</th><th>Sety</th></tr></thead>
-    <tbody></tbody>
-  </table>
-
-  <h3>Miejsca w lidze</h3>
-  <table id="tbl-liga-miejsca">
-    <thead><tr><th>Drużyna</th><th>Mecze</th><th>Wygrane</th><th>Przegrane</th><th>Punkty</th></tr></thead>
-    <tbody></tbody>
-  </table>
-</section>
+      <div class="status">Kolumna „Protokół” pokazuje link, jeśli został wpisany w arkuszu.</div>
+    </div>
+  </div>
+</main>
 
 <script>
-const BASE_URL = "https://script.google.com/macros/s/AKfycbzQqe4XSxRhRXHiVq3KZ0ZyChn8FafdfR9ZEGxhsUcUO0ukTVUmKayjbm5S3_wCQA6t/exec";
-let currentCategory = "Mlodzik";
+// ⬇️ PODMIEŃ NA SWÓJ AKTUALNY LINK /exec (WDROŻENIE: Anyone)
+const BASE_URL = "https://script.google.com/macros/s/AKfycbxShmcWM1--lP8TPjGgKg7z-F-bZpEJnS46hNQ63RRf-nIlN6EQ7VRvFc9ULtIR-Wil/exec?action=get";
 
-function switchCategory(cat) {
-  currentCategory = cat;
-  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-  document.querySelector(`.tab:nth-child(${cat === "Mlodzik" ? 1 : 2})`).classList.add("active");
-  document.getElementById("catTitle").textContent = cat;
-  loadData();
+// Jeśli CORS by przeszkadzał, użyj PROXY_URL zamiast BASE_URL:
+// const BASE_URL = "https://corsproxy.io/?" + encodeURIComponent("https://script.google.com/macros/s/TWOJ_EXEC_ID/exec?action=get");
+
+const $status = document.getElementById('status');
+const $filters = document.getElementById('filters');
+const $tbody = document.querySelector('#tbl-terminarz tbody');
+
+let allRows = [];
+let activeFilter = 'Wszystko';
+
+function createCell(text, left=false){
+  const td = document.createElement('td');
+  if (left) td.className = 'left';
+  td.textContent = (text ?? '') === '' ? '—' : text;
+  return td;
 }
+function formatDatePL(v){
+  // Apps Script bywa zwraca Date lub ISO string – obsłużmy obie formy
+  const d = new Date(v);
+  return isNaN(d) ? (v || '—') : d.toLocaleDateString('pl-PL');
+}
+function renderTable(rows){
+  $tbody.innerHTML = '';
+  rows.forEach(r=>{
+    // struktura z API: [date, home, away, wynik, sety, kategoria, protokol]
+    const [date, home, away, score, sets, cat, proto] = r;
+    const tr = document.createElement('tr');
+    tr.appendChild(createCell(formatDatePL(date)));
+    tr.appendChild(createCell(home, true));
+    tr.appendChild(createCell(away, true));
+    tr.appendChild(createCell(score));
+    tr.appendChild(createCell(sets, true));
+    tr.appendChild(createCell(cat, true));
 
-function createCell(text){ const td=document.createElement('td'); td.textContent=text||""; return td; }
+    const tdP = document.createElement('td');
+    if (proto && String(proto).trim() !== ''){
+      const a = document.createElement('a');
+      a.href = String(proto).trim();
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.className = 'link';
+      a.textContent = '📄 Zobacz';
+      tdP.appendChild(a);
+    } else {
+      tdP.textContent = '—';
+    }
+    tr.appendChild(tdP);
+
+    $tbody.appendChild(tr);
+  });
+}
+function buildFilters(rows){
+  // zbierz unikalne wartości z kolumny „kategoria/faza”
+  const cats = new Set(['Wszystko']);
+  rows.forEach(r => { if (r[5]) cats.add(r[5]); });
+  $filters.innerHTML = '';
+  [...cats].forEach(label=>{
+    const btn = document.createElement('button');
+    btn.className = 'pill' + (label===activeFilter ? ' active':'');
+    btn.textContent = label;
+    btn.onclick = ()=>{
+      activeFilter = label;
+      document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      applyFilter();
+    };
+    $filters.appendChild(btn);
+  });
+}
+function applyFilter(){
+  if (activeFilter==='Wszystko') renderTable(allRows);
+  else renderTable(allRows.filter(r=>r[5]===activeFilter));
+}
 
 async function loadData(){
-  const url = `${BASE_URL}?action=get&category=${currentCategory}`;
-  const res = await fetch(url);
-  const data = await res.json();
+  try{
+    $status.textContent = 'Ładowanie danych…';
+    const res = await fetch(BASE_URL, { cache:'no-store' });
+    const data = await res.json();
+    // data.terminarz = [ [date,home,away,wynik,sety,category,protokol], ... ]
+    allRows = (data.terminarz || [])
+      .filter(r => r && (r[0]||r[1]||r[2])); // odfiltruj puste
+    // sortuj po dacie rosnąco
+    allRows.sort((a,b)=> new Date(a[0]).getTime() - new Date(b[0]).getTime());
 
-  fillTable("#tbl-terminarz tbody", data.terminarz);
-  fillTable("#tbl-liga-terminarz tbody", data.ligaTerminarz);
-  fillTable("#tbl-liga-miejsca tbody", data.ligaMiejsca);
-}
-
-function fillTable(selector, rows){
-  const tb = document.querySelector(selector);
-  tb.innerHTML = "";
-  rows.forEach(r => {
-    const tr = document.createElement("tr");
-    r.forEach(cell => tr.appendChild(createCell(cell)));
-    tb.appendChild(tr);
-  });
+    buildFilters(allRows);
+    applyFilter();
+    $status.textContent = '';
+  }catch(err){
+    console.error(err);
+    $status.textContent = 'Nie udało się pobrać danych. Sprawdź link /exec lub wdrożenie.';
+  }
 }
 
 loadData();
 </script>
-
 </body>
 </html>
