@@ -258,12 +258,14 @@ function renderRankingBlock(title, tableRows, isFinal=false){
       t.points
     ]);
   } else {
-    headers = ['Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty meczowe','Klasyfikacyjne','Razem'];
+    // ⬇️ tu dodajemy kolumnę "Miejsce"
+    headers = ['Miejsce','Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty meczowe','Klasyfikacyjne','Razem'];
     rows = tableRows.map((t,idx)=>{
       const place = idx+1;
       const bonus = classificationBonus(place);
       const total = t.points + bonus;
       return [
+        place, // nowa kolumna miejsce
         t.team,
         t.matches,
         t.wins,
