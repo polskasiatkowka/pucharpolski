@@ -207,25 +207,36 @@ function renderTermFinal(title, rows){
   return makeCard(title, makeTableEl(headers, mapped));
 }
 
-// ===== BONUSY KLASYFIKACYJNE =====
-// np. Młodzik: maxBonus=16, Młodziczka: maxBonus=42
+// --- bonusy punktów klasyfikacyjnych w finale ---
+const BONUS_BY_KIND = {
+  mlodzik: 16,       // 1. miejsce = 16, 2. = 15 ... min 1
+  mlodziczka: 42     // 1. miejsce = 42, 2. = 41 ... min 1
+};
+
+// dla miejsca N i maksymalnego bonusu X zwraca: X-(N-1), ale co najmniej 1
 function classificationBonus(place, maxBonus){
-  const p = maxBonus - (place - 1);
-  return p >= 1 ? p : 1;
+  const val = maxBonus - (place - 1);
+  return val >= 1 ? val : 1;
 }
 
 // ===== RANKING (z/bez bonusów) =====
 // renderRanking(title, tableRows, opts?)
-//   opts = { final: true/false, maxBonus: number }
+//   opts = { final: true/false, kind: 'mlodzik'|'mlodziczka', maxBonus?: number }
 function renderRanking(title, tableRows, opts = {}){
   const isFinal  = !!opts.final;
-  const maxBonus = Number(opts.maxBonus || 0);
+  const maxBonus = Number(
+    opts.maxBonus ?? BONUS_BY_KIND[opts.kind] ?? 0
+  );
 
   let headers, rows;
   if (!isFinal){
     headers = ['Miejsce','Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty'];
     rows = tableRows.map((t,idx)=>[
-      idx+1, t.team, t.matches, t.wins, t.losses,
+      idx+1,
+      t.team,
+      t.matches,
+      t.wins,
+      t.losses,
       `${t.setsFor}:${t.setsAgainst}`,
       `${t.smallFor}:${t.smallAgainst} (${t.smallFor - t.smallAgainst >=0?'+':''}${t.smallFor - t.smallAgainst})`,
       t.points
@@ -237,15 +248,45 @@ function renderRanking(title, tableRows, opts = {}){
       const bonus = classificationBonus(place, maxBonus);
       const total = t.points + bonus;
       return [
-        place, t.team, t.matches, t.wins, t.losses,
+        place,
+        t.team,
+        t.matches,
+        t.wins,
+        t.losses,
         `${t.setsFor}:${t.setsAgainst}`,
         `${t.smallFor}:${t.smallAgainst} (${t.smallFor - t.smallAgainst >=0?'+':''}${t.smallFor - t.smallAgainst})`,
-        t.points, bonus, total
+        t.points,
+        bonus,
+        total
       ];
     });
   }
 
   return makeCard(title, makeTableEl(headers, rows));
+}
+
+// ===== WIDOK FINAŁU (automatyczny dobór bonusu: Młodzik=16, Młodziczka=42) =====
+function renderFinalView(allRows, label){
+  const view = document.createElement('div');
+  const grid = document.createElement('div'); grid.className='grid';
+
+  const term = renderTerminarzBlock(`${label} – Finał`, allRows);
+  const table = computeTable(allRows);
+
+  let rank;
+  if (label === 'Młodzik'){
+    rank = renderRanking(`Ranking – ${label} – Finał`, table, { final:true, kind:'mlodzik' });
+  } else if (label === 'Młodziczka'){
+    rank = renderRanking(`Ranking – ${label} – Finał`, table, { final:true, kind:'mlodziczka' });
+  } else {
+    // fallback bez bonusów (gdyby pojawiła się inna kategoria)
+    rank = renderRanking(`Ranking – ${label} – Finał`, table);
+  }
+
+  grid.appendChild(term);
+  grid.appendChild(rank);
+  view.appendChild(grid);
+  return view;
 }
 
 // card helper
