@@ -53,6 +53,14 @@
   .note{color:var(--muted); font-size:12px; margin-top:6px}
 
   .muted{color:var(--muted)}
+
+  /* Chipy/status + podświetlenie wierszy */
+.chip{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.chip-upcoming{background:#eef2ff;color:#1e3a8a;border:1px solid #c7d2fe}
+.chip-played{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
+
+tr.row-upcoming td{background:#f8fafc !important} /* delikatne tło */
+tr.row-played   td{background:#f0fdf4 !important}
 </style>
 </head>
 <body>
@@ -209,20 +217,60 @@ function renderTerminarzBlock(title, rows){
   head.innerHTML = `<h2>${title}</h2>`;
   const body = document.createElement('div'); body.className='card-body';
 
-  const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Grupa','Podgrupa','Protokół'];
+  // DORZUCAMY kolumnę "Status" przed "Protokół"
+  const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Grupa','Podgrupa','Status','Protokół'];
+
   const mapped = rows.slice().sort((a,b)=>{
     const dA = parseDateAny(a[0])?.getTime()||0;
     const dB = parseDateAny(b[0])?.getTime()||0;
     return dA - dB;
   }).map(r=>{
     const proto = isUrl(r[7]) ? {__html:`<a href="${r[7]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
-    return [fmtPL(r[0]), r[1], r[2], r[3]||'', r[4]||'', r[5]||'', r[6]||'', proto];
+    const st = statusBadge(r);
+    const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
+
+    // dołącz „znacznik” klasy wiersza na pierwszej komórce (użyjemy go przy renderze)
+    const dateCell = {__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
+
+    return [dateCell, r[1], r[2], r[3]||'', r[4]||'', r[5]||'', r[6]||'', badge, proto];
   });
 
-  body.appendChild(makeTableEl(headers, mapped));
+  // renderer z obsługą klasy wiersza (row-upcoming/row-played)
+  const wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  const table = document.createElement('table');
+  const thead = document.createElement('thead');
+  const trh = document.createElement('tr');
+  headers.forEach(h=>{ const th = document.createElement('th'); th.textContent=h; trh.appendChild(th); });
+  thead.appendChild(trh);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  mapped.forEach(row=>{
+    const tr = document.createElement('tr');
+    row.forEach((cell, idx)=>{
+      const td = document.createElement('td');
+      if (cell && cell.__html){ td.innerHTML = cell.__html; }
+      else { td.textContent = (cell ?? ''); }
+      if (idx===0){
+        td.classList.add('left');
+        // odczytaj klasę wiersza z data-rowcls osadzonego w dacie
+        const span = td.querySelector('span[data-rowcls]');
+        const rowCls = span ? span.getAttribute('data-rowcls') : '';
+        if (rowCls) tr.classList.add(rowCls);
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+
+  body.appendChild(wrap);
   card.appendChild(head); card.appendChild(body);
   return card;
 }
+
 
 function renderRankingBlock(title, tableRows, withFinalBonus=false){
   const card = document.createElement('div'); card.className='card';
@@ -294,6 +342,27 @@ function groupByGroupAndSub(rows){
     }
   });
   return out;
+}
+  function hasScoreOrSets(score, sets){
+  const sOk = typeof score === 'string' && score.includes(':');
+  const setsOk = typeof sets === 'string' && /\d+:\d+/.test(sets);
+  return sOk || setsOk;
+}
+
+function isUpcomingDate(rawDate){
+  const d = parseDateAny(rawDate);
+  if (!d) return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return d >= today;
+}
+
+function statusBadge(row){
+  const [rawDate, , , score, sets] = row;
+  const played = hasScoreOrSets(score, sets);
+  if (played) return { text:'✅ Rozegrany', cls:'chip-played', rowCls:'row-played' };
+  if (isUpcomingDate(rawDate)) return { text:'⏳ Nadchodzący', cls:'chip-upcoming', rowCls:'row-upcoming' };
+  // po terminie, ale brak wyniku – traktujemy neutralnie
+  return { text:'—', cls:'', rowCls:'' };
 }
 
 /* ======== WIDOKI ======== */
@@ -387,6 +456,7 @@ async function boot(){
   renderView('m_elim'); // start
 }
 boot();
+
 </script>
 </body>
 </html>
