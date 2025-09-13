@@ -42,12 +42,12 @@
 
 <main class="container">
   <div class="tabs">
-    <button class="tab-btn active" data-view="m_rozstaw1">Młodzik – Rozstaw I</button>
-    <button class="tab-btn" data-view="m_rozstaw2">Młodzik – Rozstaw II</button>
+    <button class="tab-btn active" data-view="m_roz1">Młodzik – Rozstaw I</button>
+    <button class="tab-btn" data-view="m_roz2">Młodzik – Rozstaw II</button>
     <button class="tab-btn" data-view="m_liga">Młodzik – Liga</button>
     <button class="tab-btn" data-view="m_final">Młodzik – Finał</button>
-    <button class="tab-btn" data-view="f_rozstaw1">Młodziczka – Rozstaw I</button>
-    <button class="tab-btn" data-view="f_rozstaw2">Młodziczka – Rozstaw II</button>
+    <button class="tab-btn" data-view="f_roz1">Młodziczka – Rozstaw I</button>
+    <button class="tab-btn" data-view="f_roz2">Młodziczka – Rozstaw II</button>
     <button class="tab-btn" data-view="f_liga">Młodziczka – Liga</button>
     <button class="tab-btn" data-view="f_final">Młodziczka – Finał</button>
   </div>
@@ -55,75 +55,399 @@
 </main>
 
 <script>
-// <<< PODMIEŃ TYLKO TEN LINK >>>
-const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbwxcm10QSkzvs5uUX3RyRXL3xA5Ci01_bNyuLRjFxYYRIqUo3qE23lt9qwPks75IaXu/exec";
+// <<< PODMIEŃ TYLKO TĘ LINIĘ: >>>
+const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbwxcm10QSkzvs5uUX3RyRXL3xA5Ci01_bNyuLRjFxYYRIqUo3qE23lt9qwPks75IaXu/exec"; // np. https://script.google.com/macros/s/AKf.../exec
+// używamy proxy dla CORS:
 const WEB_APP_URL = "https://corsproxy.io/?" + encodeURIComponent(WEB_APP_URL_BASE + "?action=get&cb=" + Date.now());
 
-// --- utils (formaty, daty, tabela, parseSets, computeTable, statusBadge itd.)
-// [tutaj wklej cały dział utils i computeTable z Twojej działającej wersji]
+// ===== utils
+function isUrl(v){ try{ const u = new URL((v||'').trim()); return /^https?:$/.test(u.protocol); }catch(e){ return false; } }
+function parseDateAny(v){
+  if (v instanceof Date && !isNaN(v)) return v;
+  if (typeof v === 'string' && v.includes('T')) { const d = new Date(v); if (!isNaN(d)) return d; }
+  if (typeof v === 'string' && v.includes('.')){ const [d,m,y] = v.split('.').map(Number); const dd = new Date(y,(m||1)-1,d||1); if (!isNaN(dd)) return dd; }
+  const d = new Date(v); return isNaN(d) ? null : d;
+}
+function fmtPL(v){ const d = parseDateAny(v); return d ? d.toLocaleDateString('pl-PL') : (v ?? ''); }
 
-// --- bonusy punktów klasyfikacyjnych ---
-const BONUS_BY_KIND = { mlodzik: 16, mlodziczka: 42 };
-function classificationBonus(place, maxBonus){ const val=maxBonus-(place-1); return val>=1?val:1; }
+function makeTableEl(headers, rows){
+  const wrap = document.createElement('div'); wrap.className='table-wrap';
+  const table = document.createElement('table');
+  const thead = document.createElement('thead'); const trh = document.createElement('tr');
+  headers.forEach(h=>{ const th=document.createElement('th'); th.textContent=h; trh.appendChild(th); });
+  thead.appendChild(trh); table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    r.forEach((cell, idx)=>{
+      const td = document.createElement('td');
+      if (cell && cell.__html){ td.innerHTML = cell.__html; } else { td.textContent = (cell ?? ''); }
+      if (idx===0 && typeof cell === 'string') td.classList.add('left');
+      if (idx===0 && cell && cell.__html){ const span=td.querySelector('span[data-rowcls]'); const rowCls=span?span.getAttribute('data-rowcls'):''; if (rowCls) tr.classList.add(rowCls); }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody); wrap.appendChild(table);
+  return wrap;
+}
 
-// --- renderRanking (z bonusami dla finałów) ---
+// sets + scoring (wszędzie 2/1)
+function parseSets(setsStr){
+  const txt=(setsStr||'').toString().trim(); if (!txt) return {hSets:0,aSets:0,hPts:0,aPts:0};
+  const parts=txt.split(/\s+/); let hSets=0,aSets=0,hPts=0,aPts=0;
+  parts.forEach(p=>{ const [h,a]=p.split(':').map(n=>parseInt(n,10)); if (isNaN(h)||isNaN(a)) return; hPts+=h; aPts+=a; if (h>a) hSets++; else if (a>h) aSets++; });
+  return {hSets,aSets,hPts,aPts};
+}
+function matchPointsTwoOne(hSets,aSets){
+  if ((hSets+aSets)===0) return {home:0,away:0};
+  if (hSets>aSets) return {home:2,away:1};
+  if (aSets>hSets) return {home:1,away:2};
+  return {home:0,away:0};
+}
+function computeTable(rows){
+  const teams={};
+  const ensure=n=>teams[n]||(teams[n]={team:n,matches:0,wins:0,losses:0,setsFor:0,setsAgainst:0,smallFor:0,smallAgainst:0,points:0});
+  rows.forEach(r=>{
+    const [ , home, away, , setsStr] = r;
+    if (!home || !away) return;
+    const {hSets,aSets,hPts,aPts}=parseSets(setsStr);
+    const {home:hp,away:ap}=matchPointsTwoOne(hSets,aSets);
+    const H=ensure(home), A=ensure(away);
+    if ((hSets+aSets)>0){
+      H.matches++; A.matches++;
+      if (hSets>aSets){ H.wins++; A.losses++; } else if (aSets>hSets){ A.wins++; H.losses++; }
+      H.setsFor+=hSets; H.setsAgainst+=aSets; A.setsFor+=aSets; A.setsAgainst+=hSets;
+      H.smallFor+=hPts; H.smallAgainst+=aPts; A.smallFor+=aPts; A.smallAgainst+=hPts;
+      H.points+=hp; A.points+=ap;
+    }
+  });
+  const arr=Object.values(teams).map(t=>({ ...t, smallDiff:t.smallFor-t.smallAgainst, setRatio: t.setsAgainst===0 ? (t.setsFor>0?Infinity:0) : t.setsFor/t.setsAgainst }));
+  arr.sort((a,b)=>{
+    if (b.points!==a.points) return b.points-a.points;
+    if (b.smallDiff!==a.smallDiff) return b.smallDiff-a.smallDiff;
+    if (b.setsFor!==a.setsFor) return b.setsFor-a.setsFor;
+    if (b.setRatio!==a.setRatio) return b.setRatio-a.setRatio;
+    return a.team.localeCompare(b.team,'pl');
+  });
+  return arr;
+}
+
+// status badge
+function hasScoreOrSets(score, sets){ const sOk = typeof score==='string' && score.includes(':'); const setsOk = typeof sets==='string' && /\d+:\d+/.test(sets); return sOk || setsOk; }
+function isUpcomingDate(rawDate){ const d=parseDateAny(rawDate); if(!d) return false; const t=new Date(); t.setHours(0,0,0,0); return d>=t; }
+function statusBadge(row){ const [rawDate, , , score, sets] = row; const played=hasScoreOrSets(score,sets);
+  if (played) return {text:'✅ Rozegrany', cls:'chip-played', rowCls:'row-played'};
+  if (isUpcomingDate(rawDate)) return {text:'⏳ Nadchodzący', cls:'chip-upcoming', rowCls:'row-upcoming'};
+  return {text:'—', cls:'', rowCls:''};
+}
+
+// grupowanie
+function normRoman(g){
+  if (!g) return '';
+  const s=g.toString().trim().toUpperCase();
+  if (/^\d+$/.test(s)){ const n=parseInt(s,10); const romans=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV']; return romans[n]||s; }
+  return s;
+}
+function groupByRozstaw(rows){
+  // -> {'I':{A:[...],B:[...]}, ...}
+  const out={};
+  rows.forEach(r=>{ const g=normRoman(r[5]||''); const sub=(r[6]||'').toString().trim().toUpperCase(); if(!g||!sub) return; out[g] ||= {A:[],B:[]}; if (sub==='A'||sub==='B') out[g][sub].push(r); });
+  return out;
+}
+function groupByLiga(rows, ligaColIndex){
+  const out={};
+  rows.forEach(r=>{ const l=normRoman(r[ligaColIndex]||''); if(!l) return; (out[l] ||= []).push(r); });
+  return out;
+}
+
+// renderery terminarzy
+function renderTermRozstaw(title, rows){
+  const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Grupa','Podgrupa','Status','Protokół'];
+  const mapped = rows.slice().sort((a,b)=> (parseDateAny(a[0])?.getTime()||0) - (parseDateAny(b[0])?.getTime()||0)).map(r=>{
+    const st=statusBadge(r);
+    const dateCell={__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
+    const proto = isUrl(r[7]) ? {__html:`<a href="${r[7]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
+    const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
+    return [dateCell, r[1], r[2], r[3]||'', r[4]||'', r[5]||'', r[6]||'', badge, proto];
+  });
+  return makeCard(title, makeTableEl(headers, mapped));
+}
+function renderTermLigaM(title, rows){
+  const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Liga','Kolejka','Status','Protokół'];
+  const mapped = rows.slice().sort((a,b)=> (parseDateAny(a[0])?.getTime()||0) - (parseDateAny(b[0])?.getTime()||0)).map(r=>{
+    const st=statusBadge(r);
+    const dateCell={__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
+    const proto = isUrl(r[7]) ? {__html:`<a href="${r[7]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
+    const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
+    return [dateCell, r[1], r[2], r[3]||'', r[4]||'', r[5]||'', r[6]||'', badge, proto];
+  });
+  return makeCard(title, makeTableEl(headers, mapped));
+}
+function renderTermLigaF(title, rows){
+  const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Liga','Status','Protokół'];
+  const mapped = rows.slice().sort((a,b)=> (parseDateAny(a[0])?.getTime()||0) - (parseDateAny(b[0])?.getTime()||0)).map(r=>{
+    const st=statusBadge(r);
+    const dateCell={__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
+    const proto = isUrl(r[6]) ? {__html:`<a href="${r[6]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
+    const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
+    return [dateCell, r[1], r[2], r[3]||'', r[4]||'', r[5]||'', badge, proto];
+  });
+  return makeCard(title, makeTableEl(headers, mapped));
+}
+function renderTermFinal(title, rows){
+  const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Status','Protokół'];
+  const mapped = rows.slice().sort((a,b)=> (parseDateAny(a[0])?.getTime()||0) - (parseDateAny(b[0])?.getTime()||0)).map(r=>{
+    const st=statusBadge(r);
+    const dateCell={__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
+    const proto = isUrl(r[5]) ? {__html:`<a href="${r[5]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
+    const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
+    return [dateCell, r[1], r[2], r[3]||'', r[4]||'', badge, proto];
+  });
+  return makeCard(title, makeTableEl(headers, mapped));
+}
+
+// --- bonusy punktów klasyfikacyjnych w finale ---
+const BONUS_BY_KIND = {
+  mlodzik: 16,       // 1. miejsce = 16, 2. = 15 ... min 1
+  mlodziczka: 42     // 1. miejsce = 42, 2. = 41 ... min 1
+};
+
+// dla miejsca N i maksymalnego bonusu X zwraca: X-(N-1), ale co najmniej 1
+function classificationBonus(place, maxBonus){
+  const val = maxBonus - (place - 1);
+  return val >= 1 ? val : 1;
+}
+
+// ===== RANKING (z/bez bonusów) =====
+// renderRanking(title, tableRows, opts?)
+//   opts = { final: true/false, kind: 'mlodzik'|'mlodziczka', maxBonus?: number }
 function renderRanking(title, tableRows, opts = {}){
-  const isFinal=!!opts.final;
-  const maxBonus=Number(opts.maxBonus ?? BONUS_BY_KIND[opts.kind] ?? 0);
+  const isFinal  = !!opts.final;
+  const maxBonus = Number(
+    opts.maxBonus ?? BONUS_BY_KIND[opts.kind] ?? 0
+  );
+
   let headers, rows;
-  if(!isFinal){
-    headers=['Miejsce','Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty'];
-    rows=tableRows.map((t,idx)=>[ idx+1,t.team,t.matches,t.wins,t.losses,`${t.setsFor}:${t.setsAgainst}`,`${t.smallFor}:${t.smallAgainst} (${t.smallFor-t.smallAgainst>=0?'+':''}${t.smallFor-t.smallAgainst})`,t.points ]);
-  }else{
-    headers=['Miejsce','Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty meczowe','Klasyfikacyjne','Razem'];
-    rows=tableRows.map((t,idx)=>{ const place=idx+1; const bonus=classificationBonus(place,maxBonus); const total=t.points+bonus;
-      return [place,t.team,t.matches,t.wins,t.losses,`${t.setsFor}:${t.setsAgainst}`,`${t.smallFor}:${t.smallAgainst} (${t.smallFor-t.smallAgainst>=0?'+':''}${t.smallFor-t.smallAgainst})`,t.points,bonus,total]; });
+  if (!isFinal){
+    headers = ['Miejsce','Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty'];
+    rows = tableRows.map((t,idx)=>[
+      idx+1,
+      t.team,
+      t.matches,
+      t.wins,
+      t.losses,
+      `${t.setsFor}:${t.setsAgainst}`,
+      `${t.smallFor}:${t.smallAgainst} (${t.smallFor - t.smallAgainst >=0?'+':''}${t.smallFor - t.smallAgainst})`,
+      t.points
+    ]);
+  } else {
+    headers = ['Miejsce','Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty meczowe','Klasyfikacyjne','Razem'];
+    rows = tableRows.map((t,idx)=>{
+      const place = idx+1;
+      const bonus = classificationBonus(place, maxBonus);
+      const total = t.points + bonus;
+      return [
+        place,
+        t.team,
+        t.matches,
+        t.wins,
+        t.losses,
+        `${t.setsFor}:${t.setsAgainst}`,
+        `${t.smallFor}:${t.smallAgainst} (${t.smallFor - t.smallAgainst >=0?'+':''}${t.smallFor - t.smallAgainst})`,
+        t.points,
+        bonus,
+        total
+      ];
+    });
   }
+
   return makeCard(title, makeTableEl(headers, rows));
 }
 
-// --- renderFinalView (używa bonusów: 16 dla młodzika, 42 dla młodziczki) ---
+// ===== WIDOK FINAŁU (automatyczny dobór bonusu: Młodzik=16, Młodziczka=42) =====
 function renderFinalView(allRows, label){
-  const view=document.createElement('div'); const grid=document.createElement('div'); grid.className='grid';
-  const term=renderTermFinal(`${label} – Finał`, allRows);
-  const table=computeTable(allRows);
+  const view = document.createElement('div');
+  const grid = document.createElement('div'); grid.className='grid';
+
+  // Użyj swojego renderer’a terminarza finału:
+  const term = renderTermFinal(`${label} – Finał`, allRows);
+
+  // Punkty meczowe liczymy jak zawsze (2/1, do 2 setów)
+  const table = computeTable(allRows);
+
+  // Ranking z bonusami klasyfikacyjnymi
   let rank;
-  if(label==='Młodzik') rank=renderRanking(`Ranking – ${label} – Finał`, table, {final:true,kind:'mlodzik'});
-  else if(label==='Młodziczka') rank=renderRanking(`Ranking – ${label} – Finał`, table, {final:true,kind:'mlodziczka'});
-  else rank=renderRanking(`Ranking – ${label} – Finał`, table);
-  grid.appendChild(term); grid.appendChild(rank); view.appendChild(grid); return view;
+  if (label === 'Młodzik'){
+    rank = renderRanking(`Ranking – ${label} – Finał`, table, { final:true, kind:'mlodzik' });
+  } else if (label === 'Młodziczka'){
+    rank = renderRanking(`Ranking – ${label} – Finał`, table, { final:true, kind:'mlodziczka' });
+  } else {
+    // awaryjnie bez bonusów dla innych kategorii
+    rank = renderRanking(`Ranking – ${label} – Finał`, table);
+  }
+
+  grid.appendChild(term);
+  grid.appendChild(rank);
+  view.appendChild(grid);
+  return view;
 }
 
-// --- widoki (viewRozstaw, viewLigaM, viewLigaF itd.) ---
-// [tutaj zostaw swoje renderTermRozstaw, renderTermLigaM, renderTermLigaF, renderTermFinal i viewRozstaw, viewLigaM, viewLigaF]
+// ===== RENDER PRZEŁĄCZANIA WIDOKÓW (zakładki) =====
+let DATA = null;
 
-// --- obsługa zakładek + boot ---
+function setActive(btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function renderView(kind){
+  const mount = document.getElementById('view');
+  mount.innerHTML = '';
+  if (!DATA) return;
+
+  if (kind === 'm_rozstaw1') {
+    mount.appendChild(viewRozstaw('Młodzik', DATA.m_rozstaw1||[]));
+  } else if (kind === 'm_rozstaw2') {
+    mount.appendChild(viewRozstaw('Młodzik', DATA.m_rozstaw2||[]));
+  } else if (kind === 'm_liga') {
+    mount.appendChild(viewLiga('Młodzik', DATA.m_liga||[])); // jeśli masz widok ligi
+  } else if (kind === 'm_final') {
+    mount.appendChild(renderFinalView(DATA.m_final||[], 'Młodzik'));
+  } else if (kind === 'f_rozstaw1') {
+    mount.appendChild(viewRozstaw('Młodziczka', DATA.f_rozstaw1||[]));
+  } else if (kind === 'f_rozstaw2') {
+    mount.appendChild(viewRozstaw('Młodziczka', DATA.f_rozstaw2||[]));
+  } else if (kind === 'f_liga') {
+    mount.appendChild(viewLiga('Młodziczka', DATA.f_liga||[])); // jeśli masz widok ligi
+  } else if (kind === 'f_final') {
+    mount.appendChild(renderFinalView(DATA.f_final||[], 'Młodziczka'));
+  }
+}
+
+// ===== START APLIKACJI =====
+async function boot(){
+  try{
+    const res = await fetch(WEB_APP_URL, { cache:'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    DATA = await res.json();
+  }catch(err){
+    const mount = document.getElementById('view');
+    mount.innerHTML = `<div class="card"><div class="card-header"><h2>Błąd</h2></div><div class="card-body"><p class="muted">Nie udało się pobrać danych z Apps Script.<br> Szczegóły: ${err}</p></div></div>`;
+    return;
+  }
+
+  // Obsługa zakładek
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      setActive(btn);
+      renderView(btn.dataset.view);
+    });
+  });
+
+  // Domyślny start (zmień, jeśli chcesz inny)
+  renderView('m_rozstaw1');
+}
+boot();
+
+// card helper
+function makeCard(title, innerEl){
+  const card=document.createElement('div'); card.className='card';
+  const head=document.createElement('div'); head.className='card-header'; head.innerHTML=`<h2>${title}</h2>`;
+  const body=document.createElement('div'); body.className='card-body'; body.appendChild(innerEl);
+  card.appendChild(head); card.appendChild(body); return card;
+}
+
+// widoki
+function viewRozstaw(label, rows){
+  const groups = groupByRozstaw(rows);
+  const root=document.createElement('div');
+  const order=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
+  Object.keys(groups).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(g=>{
+    ['A','B'].forEach(sub=>{
+      const pack = groups[g][sub];
+      if (!pack || pack.length===0) return;
+      const grid=document.createElement('div'); grid.className='grid';
+      const term = renderTermRozstaw(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
+      const rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – Podgrupa ${sub}`, computeTable(pack));
+      grid.appendChild(term); grid.appendChild(rank); root.appendChild(grid);
+    });
+  });
+  if (!root.children.length){ root.appendChild(makeCard(`${label} – Rozstaw`, document.createTextNode('Brak danych'))); }
+  return root;
+}
+
+function viewLigaM(rows){
+  const byLiga = groupByLiga(rows, 5); // kolumna „Liga”
+  const root=document.createElement('div');
+  const order=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
+  Object.keys(byLiga).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(l=>{
+    const pack = byLiga[l];
+    const grid=document.createElement('div'); grid.className='grid';
+    const term = renderTermLigaM(`Młodzik – Liga ${l}`, pack);
+    const rank = renderRanking(`Ranking – Młodzik – Liga ${l}`, computeTable(pack));
+    grid.appendChild(term); grid.appendChild(rank); root.appendChild(grid);
+  });
+  if (!root.children.length){ root.appendChild(makeCard(`Młodzik – Liga`, document.createTextNode('Brak danych'))); }
+  return root;
+}
+
+function viewLigaF(rows){
+  const byLiga = groupByLiga(rows, 5);
+  const root=document.createElement('div');
+  const order=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
+  Object.keys(byLiga).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(l=>{
+    const pack = byLiga[l];
+    const grid=document.createElement('div'); grid.className='grid';
+    const term = renderTermLigaF(`Młodziczka – Liga ${l}`, pack);
+    const rank = renderRanking(`Ranking – Młodziczka – Liga ${l}`, computeTable(pack));
+    grid.appendChild(term); grid.appendChild(rank); root.appendChild(grid);
+  });
+  if (!root.children.length){ root.appendChild(makeCard(`Młodziczka – Liga`, document.createTextNode('Brak danych'))); }
+  return root;
+}
+
+function viewFinal(label, rows){
+  const root=document.createElement('div');
+  const grid=document.createElement('div'); grid.className='grid';
+  const term = renderTermFinal(`${label} – Finał`, rows);
+  const rank = renderRanking(`Ranking – ${label} – Finał`, computeTable(rows));
+  grid.appendChild(term); grid.appendChild(rank); root.appendChild(grid);
+  return root;
+}
+
+// app
 let DATA=null;
 function setActive(btn){ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
 function renderView(kind){
   const mount=document.getElementById('view'); mount.innerHTML='';
-  if(!DATA) return;
-  if(kind==='m_rozstaw1') mount.appendChild(viewRozstaw('Młodzik',DATA.m_rozstaw1||[]));
-  else if(kind==='m_rozstaw2') mount.appendChild(viewRozstaw('Młodzik',DATA.m_rozstaw2||[]));
-  else if(kind==='m_liga') mount.appendChild(viewLigaM(DATA.m_liga||[]));
-  else if(kind==='m_final') mount.appendChild(renderFinalView(DATA.m_final||[],'Młodzik'));
-  else if(kind==='f_rozstaw1') mount.appendChild(viewRozstaw('Młodziczka',DATA.f_rozstaw1||[]));
-  else if(kind==='f_rozstaw2') mount.appendChild(viewRozstaw('Młodziczka',DATA.f_rozstaw2||[]));
-  else if(kind==='f_liga') mount.appendChild(viewLigaF(DATA.f_liga||[]));
-  else if(kind==='f_final') mount.appendChild(renderFinalView(DATA.f_final||[],'Młodziczka'));
+  if (!DATA) return;
+  if (kind==='m_roz1')      mount.appendChild( viewRozstaw('Młodzik', DATA.m_rozstaw_i||[]) );
+  else if (kind==='m_roz2') mount.appendChild( viewRozstaw('Młodzik', DATA.m_rozstaw_ii||[]) );
+  else if (kind==='m_liga') mount.appendChild( viewLigaM(DATA.m_liga||[]) );
+  else if (kind==='m_final')mount.appendChild( viewFinal('Młodzik', DATA.m_final||[]) );
+  else if (kind==='f_roz1') mount.appendChild( viewRozstaw('Młodziczka', DATA.f_rozstaw_i||[]) );
+  else if (kind==='f_roz2') mount.appendChild( viewRozstaw('Młodziczka', DATA.f_rozstaw_ii||[]) );
+  else if (kind==='f_liga') mount.appendChild( viewLigaF(DATA.f_liga||[]) );
+  else if (kind==='f_final')mount.appendChild( viewFinal('Młodziczka', DATA.f_final||[]) );
 }
+
 async function boot(){
   try{
-    const res=await fetch(WEB_APP_URL,{cache:'no-store'});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    DATA=await res.json();
+    const res = await fetch(WEB_APP_URL, {cache:'no-store'});
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    DATA = await res.json();
   }catch(err){
     const mount=document.getElementById('view');
-    mount.innerHTML=`<div class="card"><div class="card-header"><h2>Błąd</h2></div><div class="card-body"><p class="muted">Nie udało się pobrać danych.<br>Szczegóły: ${err}</p></div></div>`;
+    const card = makeCard('Błąd', document.createTextNode('Nie udało się pobrać danych z Apps Script.\nSzczegóły: '+err));
+    mount.appendChild(card);
     return;
   }
-  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{ setActive(btn); renderView(btn.dataset.view); }));
-  renderView('m_rozstaw1'); // start
+
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ setActive(btn); renderView(btn.dataset.view); });
+  });
+  renderView('m_roz1'); // start
 }
 boot();
 </script>
