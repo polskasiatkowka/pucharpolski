@@ -19,7 +19,6 @@
   header{background:var(--blue);color:#fff;padding:18px 16px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
   header .wrap{max-width:1200px;margin:0 auto;}
   h1{margin:0;font-size:clamp(18px,2.3vw,24px);font-weight:700;}
-
   .container{max-width:1200px;margin:24px auto;padding:0 16px;}
 
   .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
@@ -46,15 +45,14 @@
   .subttl{margin:6px 0 10px; color:var(--muted); font-weight:600; font-size:14px}
 
   .table-wrap{overflow-x:auto}
-  table{width:100%; border-collapse:collapse; min-width:680px}
+  table{width:100%; border-collapse:collapse; min-width:700px}
   thead th{background:var(--blue); color:#fff; padding:9px 8px; text-align:center}
   tbody td{padding:9px 8px; text-align:center; border-bottom:1px solid var(--border); background:#fff}
   tbody tr:nth-child(even) td{background:var(--row-alt)}
   td.left{text-align:left}
-  td.badge{text-align:center}
   .note{color:var(--muted); font-size:12px; margin-top:6px}
 
-  .proto a{font-weight:700; text-decoration:none}
+  .muted{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -65,7 +63,7 @@
 </header>
 
 <main class="container">
-  <!-- 4 przyciski/zakładki -->
+  <!-- 4 zakładki -->
   <div class="tabs">
     <button class="tab-btn active" data-view="m_elim">Młodzik – Eliminacje</button>
     <button class="tab-btn" data-view="m_final">Młodzik – Finał</button>
@@ -73,23 +71,21 @@
     <button class="tab-btn" data-view="f_final">Młodziczka – Finał</button>
   </div>
 
-  <!-- Kontener, do którego dynamicznie wstrzykujemy widoki -->
   <div id="view"></div>
 </main>
 
 <script>
+/* <<< PODAJ SWÓJ LINK DO APPS SCRIPT >>> */
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwqtVt7dlMbDBqcUtpNiA_nFyj0nhiYf1CVlmmZNmj5aAt1punONexLjWRUMbBuzpXD/exec?action=get";
 
-let DATA = null;
-
+/* ======== NARZĘDZIA ======== */
 function isUrl(v){
   try{ const u = new URL((v||'').trim()); return /^https?:$/.test(u.protocol); }catch(e){ return false; }
 }
 function parseDateAny(v){
   if (v instanceof Date && !isNaN(v)) return v;
   if (typeof v === 'string' && v.includes('T')) {
-    const d = new Date(v);
-    if (!isNaN(d)) return d;
+    const d = new Date(v); if (!isNaN(d)) return d;
   }
   if (typeof v === 'string' && v.includes('.')){
     const [d,m,y] = v.split('.').map(Number);
@@ -103,8 +99,32 @@ function fmtPL(v){
   const d = parseDateAny(v);
   return d ? d.toLocaleDateString('pl-PL') : (v ?? '');
 }
+function makeTableEl(headers, rows){
+  const wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  const table = document.createElement('table');
+  const thead = document.createElement('thead');
+  const trh = document.createElement('tr');
+  headers.forEach(h=>{ const th = document.createElement('th'); th.textContent=h; trh.appendChild(th); });
+  thead.appendChild(trh); table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    r.forEach((cell, idx)=>{
+      const td = document.createElement('td');
+      if (cell && cell.__html){ td.innerHTML = cell.__html; }
+      else { td.textContent = (cell ?? ''); }
+      if (idx===0 && typeof cell === 'string') td.classList.add('left');
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody); wrap.appendChild(table);
+  return wrap;
+}
 
-// Parsowanie setów: "25:23 30:28 29:31 25:23"
+/* ======== PARSOWANIE SETÓW ======== */
+// Sety zapis: "25:20 22:25 15:13"
 function parseSets(setsStr){
   const txt = (setsStr||'').toString().trim();
   if (!txt) return {hSets:0,aSets:0,hPts:0,aPts:0};
@@ -119,64 +139,56 @@ function parseSets(setsStr){
   return {hSets,aSets,hPts,aPts};
 }
 
-// Punkty meczowe wg siatkówki
-function matchPoints(hSets,aSets){
-  // zwycięzca 3:0/3:1 → 3 pkt, zwycięzca 3:2 → 2 pkt, przegrany 2:3 → 1 pkt, reszta 0
-  if (hSets === 3 && aSets <= 1) return {home:3, away:0};
-  if (hSets === 3 && aSets === 2) return {home:2, away:1};
-  if (aSets === 3 && hSets <= 1) return {home:0, away:3};
-  if (aSets === 3 && hSets === 2) return {home:1, away:2};
-  return {home:0, away:0};
+/* ======== PUNKTACJA (2/1 dla wszystkich) ======== */
+// zwycięzca 2 pkt, przegrany 1 pkt — tylko jeśli mecz rozegrany (>= 1 set)
+function matchPointsTwoOne(hSets, aSets){
+  if ((hSets + aSets) === 0) return {home:0, away:0};
+  if (hSets > aSets) return {home:2, away:1};
+  if (aSets > hSets) return {home:1, away:2};
+  return {home:0, away:0}; // remis nie występuje
 }
 
-// Liczenie tabeli dla listy meczów (rows: [date, home, away, score, sets, group, proto])
+/* ======== LICZENIE TABELI ======== */
+// rows: [date, home, away, wynik, sety, grupa, podgrupa, protokół]
 function computeTable(rows){
   const teams = {};
-  function ensure(name){
-    if (!teams[name]) teams[name] = {
-      team:name, matches:0, wins:0, losses:0,
-      setsFor:0, setsAgainst:0, smallFor:0, smallAgainst:0,
-      points:0 // punkty meczowe
-    };
-    return teams[name];
-  }
+  const ensure = (name)=> (teams[name] ||= {
+    team:name, matches:0, wins:0, losses:0,
+    setsFor:0, setsAgainst:0, smallFor:0, smallAgainst:0,
+    points:0
+  });
 
   rows.forEach(r=>{
     const [date, home, away, score, setsStr] = r;
     if (!home || !away) return;
 
     const {hSets,aSets,hPts,aPts} = parseSets(setsStr);
-    const {home:hp, away:ap} = matchPoints(hSets,aSets);
+    const {home:hp, away:ap} = matchPointsTwoOne(hSets,aSets);
 
-    const H = ensure(home);
-    const A = ensure(away);
+    const H = ensure(home), A = ensure(away);
 
-    // tylko jeśli mecz rozegrany (mamy jakiekolwiek sety)
     if ((hSets+aSets) > 0){
       H.matches++; A.matches++;
-      if (hSets > aSets){ H.wins++; A.losses++; }
-      else if (aSets > hSets){ A.wins++; H.losses++; }
+      if (hSets > aSets){ H.wins++; A.losses++; } else if (aSets > hSets){ A.wins++; H.losses++; }
       H.setsFor += hSets; H.setsAgainst += aSets;
       A.setsFor += aSets; A.setsAgainst += hSets;
-
       H.smallFor += hPts; H.smallAgainst += aPts;
       A.smallFor += aPts; A.smallAgainst += hPts;
-
       H.points += hp; A.points += ap;
     }
   });
 
-  // sort: punkty meczowe → różnica małych punktów → stosunek setów → nazwa
   const arr = Object.values(teams).map(t=>{
     const smallDiff = t.smallFor - t.smallAgainst;
     const setRatio = t.setsAgainst === 0 ? (t.setsFor>0?Infinity:0) : t.setsFor/t.setsAgainst;
     return {...t, smallDiff, setRatio};
   });
 
+  // sort: punkty → różnica małych → sety+ → stosunek setów → alfabet
   arr.sort((a,b)=>{
     if (b.points !== a.points) return b.points - a.points;
     if (b.smallDiff !== a.smallDiff) return b.smallDiff - a.smallDiff;
-    if (b.setsFor !== a.setsFor) return b.setsFor - a.setsFor; // dodatkowy
+    if (b.setsFor !== a.setsFor) return b.setsFor - a.setsFor;
     if (b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;
     return a.team.localeCompare(b.team,'pl');
   });
@@ -184,54 +196,27 @@ function computeTable(rows){
   return arr;
 }
 
-// Bonus za klasyfikację finału (1→15, 2→14, ..., 15→1; powyżej 15 też min 1)
+/* ======== KLASYFIKACJA FINAŁOWA (15..1) ======== */
 function classificationBonus(place){
   const p = 16 - place;
   return p >= 1 ? p : 1;
 }
 
-function makeTableEl(headers, rows){
-  const wrap = document.createElement('div');
-  wrap.className = 'table-wrap';
-  const table = document.createElement('table');
-  const thead = document.createElement('thead');
-  const trh = document.createElement('tr');
-  headers.forEach(h=>{
-    const th = document.createElement('th'); th.textContent=h; trh.appendChild(th);
-  });
-  thead.appendChild(trh);
-  table.appendChild(thead);
-  const tbody = document.createElement('tbody');
-  rows.forEach(r=>{
-    const tr = document.createElement('tr');
-    r.forEach((cell, idx)=>{
-      const td = document.createElement('td');
-      if (cell && cell.__html){ td.innerHTML = cell.__html; }
-      else { td.textContent = cell ?? ''; }
-      if (idx===0 && typeof cell === 'string') td.classList.add('left');
-      tr.appendChild(td);
-    });
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody);
-  wrap.appendChild(table);
-  return wrap;
-}
-
+/* ======== BLOKI WIDOKU ======== */
 function renderTerminarzBlock(title, rows){
   const card = document.createElement('div'); card.className='card';
   const head = document.createElement('div'); head.className='card-header';
   head.innerHTML = `<h2>${title}</h2>`;
   const body = document.createElement('div'); body.className='card-body';
 
-  const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Grupa','Protokół'];
+  const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Grupa','Podgrupa','Protokół'];
   const mapped = rows.slice().sort((a,b)=>{
     const dA = parseDateAny(a[0])?.getTime()||0;
     const dB = parseDateAny(b[0])?.getTime()||0;
     return dA - dB;
   }).map(r=>{
-    const proto = isUrl(r[6]) ? {__html:`<a href="${r[6]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
-    return [fmtPL(r[0]), r[1], r[2], r[3]||'', r[4]||'', r[5]||'', proto];
+    const proto = isUrl(r[7]) ? {__html:`<a href="${r[7]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
+    return [fmtPL(r[0]), r[1], r[2], r[3]||'', r[4]||'', r[5]||'', r[6]||'', proto];
   });
 
   body.appendChild(makeTableEl(headers, mapped));
@@ -239,23 +224,23 @@ function renderTerminarzBlock(title, rows){
   return card;
 }
 
-function renderRankingBlock(title, tableRows, isFinal=false){
+function renderRankingBlock(title, tableRows, withFinalBonus=false){
   const card = document.createElement('div'); card.className='card';
   const head = document.createElement('div'); head.className='card-header';
   head.innerHTML = `<h2>${title}</h2>`;
   const body = document.createElement('div'); body.className='card-body';
 
   let headers, rows;
-  if (!isFinal){
+  if (!withFinalBonus){
     headers = ['Miejsce','Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty'];
     rows = tableRows.map((t,idx)=>[
-      idx+1, // miejsce
+      idx+1,
       t.team,
       t.matches,
       t.wins,
       t.losses,
       `${t.setsFor}:${t.setsAgainst}`,
-      `${t.smallFor}:${t.smallAgainst}  (${t.smallDiff>=0?'+':''}${t.smallDiff})`,
+      `${t.smallFor}:${t.smallAgainst}  (${t.smallFor - t.smallAgainst >=0?'+':''}${t.smallFor - t.smallAgainst})`,
       t.points
     ]);
   } else {
@@ -271,7 +256,7 @@ function renderRankingBlock(title, tableRows, isFinal=false){
         t.wins,
         t.losses,
         `${t.setsFor}:${t.setsAgainst}`,
-        `${t.smallFor}:${t.smallAgainst}  (${t.smallDiff>=0?'+':''}${t.smallDiff})`,
+        `${t.smallFor}:${t.smallAgainst}  (${t.smallFor - t.smallAgainst >=0?'+':''}${t.smallFor - t.smallAgainst})`,
         t.points,
         bonus,
         total
@@ -283,47 +268,90 @@ function renderRankingBlock(title, tableRows, isFinal=false){
   card.appendChild(head); card.appendChild(body);
   return card;
 }
-function groupByABCD(rows){
-  const out = {A:[],B:[],C:[],D:[]};
+
+/* ======== GRUPOWANIE: Grupa I/II/III… → Podgrupa A/B ======== */
+function normGroupLabel(g){
+  if (!g) return '';
+  const s = g.toString().trim().toUpperCase();
+  // akceptujemy "I", "II", "III"… lub "1","2","3" (zamieniamy na rzymskie I/II/III… w wyświetlaniu)
+  if (/^\d+$/.test(s)){
+    const n = parseInt(s,10);
+    const romans = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV'];
+    return romans[n] || s;
+  }
+  return s; // już I/II…
+}
+function groupByGroupAndSub(rows){
+  // zwraca: { 'I': { 'A': [...], 'B': [...] }, 'II': {...}, ... }
+  const out = {};
   rows.forEach(r=>{
-    const g = (r[5]||'').toString().trim().toUpperCase();
-    if (out[g]) out[g].push(r);
+    const g = normGroupLabel(r[5]||''); // kolumna Grupa
+    const sub = (r[6]||'').toString().trim().toUpperCase(); // kolumna Podgrupa
+    if (!g || !sub) return;
+    out[g] ||= {A:[], B:[]};
+    if (sub === 'A' || sub === 'B'){
+      out[g][sub].push(r);
+    }
   });
   return out;
 }
 
+/* ======== WIDOKI ======== */
 function renderElimView(allRows, label){ // label: "Młodzik" / "Młodziczka"
-  const groups = groupByABCD(allRows);
+  // Grupa I/II/III… → Podgrupa A/B
+  const groups = groupByGroupAndSub(allRows);
   const view = document.createElement('div');
 
-  ['A','B','C','D'].forEach(g=>{
-    const rows = groups[g] || [];
-    const table = computeTable(rows);
-    const grid = document.createElement('div'); grid.className='grid';
+  // sortuj grupy po rzymskich (I, II, III…)
+  const groupKeys = Object.keys(groups).sort((a,b)=>{
+    const order = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV'];
+    return (order.indexOf(a) - order.indexOf(b));
+  });
 
-    const term = renderTerminarzBlock(`${label} – Eliminacje – Grupa ${g}`, rows);
-    const rank = renderRankingBlock(`Ranking – ${label} – Grupa ${g}`, table, false);
+  if (groupKeys.length === 0){
+    const card = document.createElement('div'); card.className='card';
+    const head = document.createElement('div'); head.className='card-header';
+    head.innerHTML = `<h2>${label} – Eliminacje</h2>`;
+    const body = document.createElement('div'); body.className='card-body';
+    body.innerHTML = `<p class="muted">Brak danych w arkuszu.</p>`;
+    card.appendChild(head); card.appendChild(body);
+    view.appendChild(card);
+    return view;
+  }
 
-    grid.appendChild(term); grid.appendChild(rank);
-    view.appendChild(grid);
+  groupKeys.forEach(g=>{
+    const pack = groups[g];
+    // Każdą podgrupę (A i B) pokazujemy jako: Terminarz + Ranking (2/1, do 2 setów)
+    ['A','B'].forEach(sub=>{
+      const rows = pack[sub] || [];
+      if (rows.length === 0) return;
+      const grid = document.createElement('div'); grid.className='grid';
+      const term = renderTerminarzBlock(`${label} – Eliminacje – Grupa ${g} – Podgrupa ${sub}`, rows);
+      const table = computeTable(rows); // 2/1 dla wszystkich kategorii
+      const rank = renderRankingBlock(`Ranking – ${label} – Grupa ${g} – Podgrupa ${sub}`, table, false);
+      grid.appendChild(term); grid.appendChild(rank);
+      view.appendChild(grid);
+    });
   });
 
   return view;
 }
 
 function renderFinalView(allRows, label){
-  // W finale brak grupy; liczymy całość + dodajemy punkty klasyfikacyjne 15..1
   const view = document.createElement('div');
   const grid = document.createElement('div'); grid.className='grid';
 
   const term = renderTerminarzBlock(`${label} – Finał`, allRows);
-  const table = computeTable(allRows);
+  const table = computeTable(allRows); // 2/1 dla wszystkich
   const rank = renderRankingBlock(`Ranking – ${label} – Finał (z klasyfikacją 15..1)`, table, true);
 
   grid.appendChild(term); grid.appendChild(rank);
   view.appendChild(grid);
   return view;
 }
+
+/* ======== APLIKACJA ======== */
+let DATA = null;
 
 function setActive(btn){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -349,7 +377,6 @@ async function boot(){
   const res = await fetch(WEB_APP_URL, {cache:'no-store'});
   DATA = await res.json();
 
-  // Podłącz nawigację
   document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       setActive(btn);
@@ -357,8 +384,7 @@ async function boot(){
     });
   });
 
-  // start: Młodzik – Eliminacje
-  renderView('m_elim');
+  renderView('m_elim'); // start
 }
 boot();
 </script>
