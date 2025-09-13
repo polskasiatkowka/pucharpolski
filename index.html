@@ -270,16 +270,20 @@ function renderFinalView(allRows, label){
   const view = document.createElement('div');
   const grid = document.createElement('div'); grid.className='grid';
 
-  const term = renderTerminarzBlock(`${label} – Finał`, allRows);
+  // Użyj swojego renderer’a terminarza finału:
+  const term = renderTermFinal(`${label} – Finał`, allRows);
+
+  // Punkty meczowe liczymy jak zawsze (2/1, do 2 setów)
   const table = computeTable(allRows);
 
+  // Ranking z bonusami klasyfikacyjnymi
   let rank;
   if (label === 'Młodzik'){
     rank = renderRanking(`Ranking – ${label} – Finał`, table, { final:true, kind:'mlodzik' });
   } else if (label === 'Młodziczka'){
     rank = renderRanking(`Ranking – ${label} – Finał`, table, { final:true, kind:'mlodziczka' });
   } else {
-    // fallback bez bonusów (gdyby pojawiła się inna kategoria)
+    // awaryjnie bez bonusów dla innych kategorii
     rank = renderRanking(`Ranking – ${label} – Finał`, table);
   }
 
@@ -288,6 +292,63 @@ function renderFinalView(allRows, label){
   view.appendChild(grid);
   return view;
 }
+
+// ===== RENDER PRZEŁĄCZANIA WIDOKÓW (zakładki) =====
+let DATA = null;
+
+function setActive(btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function renderView(kind){
+  const mount = document.getElementById('view');
+  mount.innerHTML = '';
+  if (!DATA) return;
+
+  if (kind === 'm_rozstaw1') {
+    mount.appendChild(viewRozstaw('Młodzik', DATA.m_rozstaw1||[]));
+  } else if (kind === 'm_rozstaw2') {
+    mount.appendChild(viewRozstaw('Młodzik', DATA.m_rozstaw2||[]));
+  } else if (kind === 'm_liga') {
+    mount.appendChild(viewLiga('Młodzik', DATA.m_liga||[])); // jeśli masz widok ligi
+  } else if (kind === 'm_final') {
+    mount.appendChild(renderFinalView(DATA.m_final||[], 'Młodzik'));
+  } else if (kind === 'f_rozstaw1') {
+    mount.appendChild(viewRozstaw('Młodziczka', DATA.f_rozstaw1||[]));
+  } else if (kind === 'f_rozstaw2') {
+    mount.appendChild(viewRozstaw('Młodziczka', DATA.f_rozstaw2||[]));
+  } else if (kind === 'f_liga') {
+    mount.appendChild(viewLiga('Młodziczka', DATA.f_liga||[])); // jeśli masz widok ligi
+  } else if (kind === 'f_final') {
+    mount.appendChild(renderFinalView(DATA.f_final||[], 'Młodziczka'));
+  }
+}
+
+// ===== START APLIKACJI =====
+async function boot(){
+  try{
+    const res = await fetch(WEB_APP_URL, { cache:'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    DATA = await res.json();
+  }catch(err){
+    const mount = document.getElementById('view');
+    mount.innerHTML = `<div class="card"><div class="card-header"><h2>Błąd</h2></div><div class="card-body"><p class="muted">Nie udało się pobrać danych z Apps Script.<br> Szczegóły: ${err}</p></div></div>`;
+    return;
+  }
+
+  // Obsługa zakładek
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      setActive(btn);
+      renderView(btn.dataset.view);
+    });
+  });
+
+  // Domyślny start (zmień, jeśli chcesz inny)
+  renderView('m_rozstaw1');
+}
+boot();
 
 // card helper
 function makeCard(title, innerEl){
