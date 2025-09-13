@@ -12,7 +12,8 @@
   }
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);}
   header{background:var(--blue);color:#fff;padding:18px 16px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
-  header .wrap{max-width:1200px;margin:0 auto;} h1{margin:0;font-size:clamp(18px,2.3vw,24px);font-weight:700;}
+  header .wrap{max-width:1200px;margin:0 auto;}
+  h1{margin:0;font-size:clamp(18px,2.3vw,24px);font-weight:700;}
   .container{max-width:1200px;margin:24px auto;padding:0 16px;}
   .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
   .tab-btn{border:1px solid var(--border); background:#fff; color:#0d3b66; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700;}
@@ -55,12 +56,12 @@
 </main>
 
 <script>
-// <<< PODMIEŃ TYLKO TĘ LINIĘ: >>>
-const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbwxcm10QSkzvs5uUX3RyRXL3xA5Ci01_bNyuLRjFxYYRIqUo3qE23lt9qwPks75IaXu/exec"; // np. https://script.google.com/macros/s/AKf.../exec
-// używamy proxy dla CORS:
+// ========= KONFIG =========
+// jeśli masz CORS ok na Apps Script, możesz użyć bezpośrednio WEB_APP_URL_BASE + "?action=get"
+const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbwxcm10QSkzvs5uUX3RyRXL3xA5Ci01_bNyuLRjFxYYRIqUo3qE23lt9qwPks75IaXu/exec";
 const WEB_APP_URL = "https://corsproxy.io/?" + encodeURIComponent(WEB_APP_URL_BASE + "?action=get&cb=" + Date.now());
 
-// ===== utils
+// ========= Utils =========
 function isUrl(v){ try{ const u = new URL((v||'').trim()); return /^https?:$/.test(u.protocol); }catch(e){ return false; } }
 function parseDateAny(v){
   if (v instanceof Date && !isNaN(v)) return v;
@@ -83,7 +84,10 @@ function makeTableEl(headers, rows){
       const td = document.createElement('td');
       if (cell && cell.__html){ td.innerHTML = cell.__html; } else { td.textContent = (cell ?? ''); }
       if (idx===0 && typeof cell === 'string') td.classList.add('left');
-      if (idx===0 && cell && cell.__html){ const span=td.querySelector('span[data-rowcls]'); const rowCls=span?span.getAttribute('data-rowcls'):''; if (rowCls) tr.classList.add(rowCls); }
+      if (idx===0 && cell && cell.__html){
+        const span=td.querySelector('span[data-rowcls]'); const rowCls=span?span.getAttribute('data-rowcls'):'';
+        if (rowCls) tr.classList.add(rowCls);
+      }
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
@@ -92,11 +96,16 @@ function makeTableEl(headers, rows){
   return wrap;
 }
 
-// sets + scoring (wszędzie 2/1)
+// ========= Sety + punktacja 2/1 =========
 function parseSets(setsStr){
   const txt=(setsStr||'').toString().trim(); if (!txt) return {hSets:0,aSets:0,hPts:0,aPts:0};
   const parts=txt.split(/\s+/); let hSets=0,aSets=0,hPts=0,aPts=0;
-  parts.forEach(p=>{ const [h,a]=p.split(':').map(n=>parseInt(n,10)); if (isNaN(h)||isNaN(a)) return; hPts+=h; aPts+=a; if (h>a) hSets++; else if (a>h) aSets++; });
+  parts.forEach(p=>{
+    const [h,a]=p.split(':').map(n=>parseInt(n,10));
+    if (isNaN(h)||isNaN(a)) return;
+    hPts+=h; aPts+=a;
+    if (h>a) hSets++; else if (a>h) aSets++;
+  });
   return {hSets,aSets,hPts,aPts};
 }
 function matchPointsTwoOne(hSets,aSets){
@@ -133,110 +142,115 @@ function computeTable(rows){
   return arr;
 }
 
-// status badge
+// ========= Status/kolory wierszy =========
 function hasScoreOrSets(score, sets){ const sOk = typeof score==='string' && score.includes(':'); const setsOk = typeof sets==='string' && /\d+:\d+/.test(sets); return sOk || setsOk; }
 function isUpcomingDate(rawDate){ const d=parseDateAny(rawDate); if(!d) return false; const t=new Date(); t.setHours(0,0,0,0); return d>=t; }
-function statusBadge(row){ const [rawDate, , , score, sets] = row; const played=hasScoreOrSets(score,sets);
+function statusBadge(row){
+  const [rawDate, , , score, sets] = row; const played=hasScoreOrSets(score,sets);
   if (played) return {text:'✅ Rozegrany', cls:'chip-played', rowCls:'row-played'};
   if (isUpcomingDate(rawDate)) return {text:'⏳ Nadchodzący', cls:'chip-upcoming', rowCls:'row-upcoming'};
   return {text:'—', cls:'', rowCls:''};
 }
 
-// grupowanie
+// ========= Grupowania =========
 function normRoman(g){
   if (!g) return '';
   const s=g.toString().trim().toUpperCase();
-  if (/^\d+$/.test(s)){ const n=parseInt(s,10); const romans=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV']; return romans[n]||s; }
+  if (/^\d+$/.test(s)){
+    const n=parseInt(s,10);
+    const romans=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'];
+    return romans[n]||s;
+  }
   return s;
 }
 function groupByRozstaw(rows){
-  // -> {'I':{A:[...],B:[...]}, ...}
+  // -> {'I':{A:[...],B:[...]}, ...}  (kol. 5=Grupa, 6=Podgrupa)
   const out={};
-  rows.forEach(r=>{ const g=normRoman(r[5]||''); const sub=(r[6]||'').toString().trim().toUpperCase(); if(!g||!sub) return; out[g] ||= {A:[],B:[]}; if (sub==='A'||sub==='B') out[g][sub].push(r); });
+  rows.forEach(r=>{
+    const g=normRoman(r[5]||''); const sub=(r[6]||'').toString().trim().toUpperCase();
+    if(!g||!sub) return;
+    out[g] ||= {A:[],B:[]};
+    if (sub==='A'||sub==='B') out[g][sub].push(r);
+  });
   return out;
 }
 function groupByLiga(rows, ligaColIndex){
   const out={};
-  rows.forEach(r=>{ const l=normRoman(r[ligaColIndex]||''); if(!l) return; (out[l] ||= []).push(r); });
+  rows.forEach(r=>{
+    const l=normRoman(r[ligaColIndex]||''); if(!l) return;
+    (out[l] ||= []).push(r);
+  });
   return out;
 }
 
-// renderery terminarzy
+// ========= Renderery terminarzy =========
 function renderTermRozstaw(title, rows){
   const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Grupa','Podgrupa','Status','Protokół'];
-  const mapped = rows.slice().sort((a,b)=> (parseDateAny(a[0])?.getTime()||0) - (parseDateAny(b[0])?.getTime()||0)).map(r=>{
-    const st=statusBadge(r);
-    const dateCell={__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
-    const proto = isUrl(r[7]) ? {__html:`<a href="${r[7]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
-    const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
-    return [dateCell, r[1], r[2], r[3]||'', r[4]||'', r[5]||'', r[6]||'', badge, proto];
-  });
+  const mapped = rows.slice()
+    .sort((a,b)=> (parseDateAny(a[0])?.getTime()||0) - (parseDateAny(b[0])?.getTime()||0))
+    .map(r=>{
+      const st=statusBadge(r);
+      const dateCell={__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
+      const proto = isUrl(r[7]) ? {__html:`<a href="${r[7]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
+      const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
+      return [dateCell, r[1], r[2], r[3]||'', r[4]||'', r[5]||'', r[6]||'', badge, proto];
+    });
   return makeCard(title, makeTableEl(headers, mapped));
 }
 function renderTermLigaM(title, rows){
   const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Liga','Kolejka','Status','Protokół'];
-  const mapped = rows.slice().sort((a,b)=> (parseDateAny(a[0])?.getTime()||0) - (parseDateAny(b[0])?.getTime()||0)).map(r=>{
-    const st=statusBadge(r);
-    const dateCell={__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
-    const proto = isUrl(r[7]) ? {__html:`<a href="${r[7]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
-    const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
-    return [dateCell, r[1], r[2], r[3]||'', r[4]||'', r[5]||'', r[6]||'', badge, proto];
-  });
+  const mapped = rows.slice()
+    .sort((a,b)=> (parseDateAny(a[0])?.getTime()||0) - (parseDateAny(b[0])?.getTime()||0))
+    .map(r=>{
+      const st=statusBadge(r);
+      const dateCell={__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
+      const proto = isUrl(r[7]) ? {__html:`<a href="${r[7]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
+      const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
+      return [dateCell, r[1], r[2], r[3]||'', r[4]||'', r[5]||'', r[6]||'', badge, proto];
+    });
   return makeCard(title, makeTableEl(headers, mapped));
 }
 function renderTermLigaF(title, rows){
   const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Liga','Status','Protokół'];
-  const mapped = rows.slice().sort((a,b)=> (parseDateAny(a[0])?.getTime()||0) - (parseDateAny(b[0])?.getTime()||0)).map(r=>{
-    const st=statusBadge(r);
-    const dateCell={__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
-    const proto = isUrl(r[6]) ? {__html:`<a href="${r[6]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
-    const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
-    return [dateCell, r[1], r[2], r[3]||'', r[4]||'', r[5]||'', badge, proto];
-  });
+  const mapped = rows.slice()
+    .sort((a,b)=> (parseDateAny(a[0])?.getTime()||0) - (parseDateAny(b[0])?.getTime()||0))
+    .map(r=>{
+      const st=statusBadge(r);
+      const dateCell={__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
+      const proto = isUrl(r[6]) ? {__html:`<a href="${r[6]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
+      const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
+      return [dateCell, r[1], r[2], r[3]||'', r[4]||'', r[5]||'', badge, proto];
+    });
   return makeCard(title, makeTableEl(headers, mapped));
 }
 function renderTermFinal(title, rows){
   const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Status','Protokół'];
-  const mapped = rows.slice().sort((a,b)=> (parseDateAny(a[0])?.getTime()||0) - (parseDateAny(b[0])?.getTime()||0)).map(r=>{
-    const st=statusBadge(r);
-    const dateCell={__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
-    const proto = isUrl(r[5]) ? {__html:`<a href="${r[5]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
-    const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
-    return [dateCell, r[1], r[2], r[3]||'', r[4]||'', badge, proto];
-  });
+  const mapped = rows.slice()
+    .sort((a,b)=> (parseDateAny(a[0])?.getTime()||0) - (parseDateAny(b[0])?.getTime()||0))
+    .map(r=>{
+      const st=statusBadge(r);
+      const dateCell={__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
+      const proto = isUrl(r[5]) ? {__html:`<a href="${r[5]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
+      const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
+      return [dateCell, r[1], r[2], r[3]||'', r[4]||'', badge, proto];
+    });
   return makeCard(title, makeTableEl(headers, mapped));
 }
 
-// --- bonusy punktów klasyfikacyjnych w finale ---
-const BONUS_BY_KIND = {
-  mlodzik: 16,       // 1. miejsce = 16, 2. = 15 ... min 1
-  mlodziczka: 42     // 1. miejsce = 42, 2. = 41 ... min 1
-};
+// ========= Bonusy finałowe =========
+const BONUS_BY_KIND = { mlodzik:16, mlodziczka:42 };
+function classificationBonus(place, maxBonus){ const v = maxBonus - (place - 1); return v>=1 ? v : 1; }
 
-// dla miejsca N i maksymalnego bonusu X zwraca: X-(N-1), ale co najmniej 1
-function classificationBonus(place, maxBonus){
-  const val = maxBonus - (place - 1);
-  return val >= 1 ? val : 1;
-}
-
-// ===== RANKING (z/bez bonusów) =====
-// renderRanking(title, tableRows, opts?)
-//   opts = { final: true/false, kind: 'mlodzik'|'mlodziczka', maxBonus?: number }
+// ========= Ranking (z/bez bonusów) =========
 function renderRanking(title, tableRows, opts = {}){
   const isFinal  = !!opts.final;
-  const maxBonus = Number(
-    opts.maxBonus ?? BONUS_BY_KIND[opts.kind] ?? 0
-  );
+  const maxBonus = Number(opts.maxBonus ?? BONUS_BY_KIND[opts.kind] ?? 0);
 
   let headers, rows;
   if (!isFinal){
     headers = ['Miejsce','Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty'];
     rows = tableRows.map((t,idx)=>[
-      idx+1,
-      t.team,
-      t.matches,
-      t.wins,
-      t.losses,
+      idx+1, t.team, t.matches, t.wins, t.losses,
       `${t.setsFor}:${t.setsAgainst}`,
       `${t.smallFor}:${t.smallAgainst} (${t.smallFor - t.smallAgainst >=0?'+':''}${t.smallFor - t.smallAgainst})`,
       t.points
@@ -248,117 +262,17 @@ function renderRanking(title, tableRows, opts = {}){
       const bonus = classificationBonus(place, maxBonus);
       const total = t.points + bonus;
       return [
-        place,
-        t.team,
-        t.matches,
-        t.wins,
-        t.losses,
+        place, t.team, t.matches, t.wins, t.losses,
         `${t.setsFor}:${t.setsAgainst}`,
         `${t.smallFor}:${t.smallAgainst} (${t.smallFor - t.smallAgainst >=0?'+':''}${t.smallFor - t.smallAgainst})`,
-        t.points,
-        bonus,
-        total
+        t.points, bonus, total
       ];
     });
   }
-
   return makeCard(title, makeTableEl(headers, rows));
 }
 
-// ===== WIDOK FINAŁU (automatyczny dobór bonusu: Młodzik=16, Młodziczka=42) =====
-function renderFinalView(allRows, label){
-  const view = document.createElement('div');
-  const grid = document.createElement('div'); grid.className='grid';
-
-  // Użyj swojego renderer’a terminarza finału:
-  const term = renderTermFinal(`${label} – Finał`, allRows);
-
-  // Punkty meczowe liczymy jak zawsze (2/1, do 2 setów)
-  const table = computeTable(allRows);
-
-  // Ranking z bonusami klasyfikacyjnymi
-  let rank;
-  if (label === 'Młodzik'){
-    rank = renderRanking(`Ranking – ${label} – Finał`, table, { final:true, kind:'mlodzik' });
-  } else if (label === 'Młodziczka'){
-    rank = renderRanking(`Ranking – ${label} – Finał`, table, { final:true, kind:'mlodziczka' });
-  } else {
-    // awaryjnie bez bonusów dla innych kategorii
-    rank = renderRanking(`Ranking – ${label} – Finał`, table);
-  }
-
-  grid.appendChild(term);
-  grid.appendChild(rank);
-  view.appendChild(grid);
-  return view;
-}
-
-// ===== RENDER PRZEŁĄCZANIA WIDOKÓW (zakładki) =====
-let DATA = null;
-
-function setActive(btn){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
-function renderView(kind){
-  const mount = document.getElementById('view');
-  mount.innerHTML = '';
-  if (!DATA) return;
-
-  if (kind === 'm_rozstaw1') {
-    mount.appendChild(viewRozstaw('Młodzik', DATA.m_rozstaw1||[]));
-  } else if (kind === 'm_rozstaw2') {
-    mount.appendChild(viewRozstaw('Młodzik', DATA.m_rozstaw2||[]));
-  } else if (kind === 'm_liga') {
-    mount.appendChild(viewLiga('Młodzik', DATA.m_liga||[])); // jeśli masz widok ligi
-  } else if (kind === 'm_final') {
-    mount.appendChild(renderFinalView(DATA.m_final||[], 'Młodzik'));
-  } else if (kind === 'f_rozstaw1') {
-    mount.appendChild(viewRozstaw('Młodziczka', DATA.f_rozstaw1||[]));
-  } else if (kind === 'f_rozstaw2') {
-    mount.appendChild(viewRozstaw('Młodziczka', DATA.f_rozstaw2||[]));
-  } else if (kind === 'f_liga') {
-    mount.appendChild(viewLiga('Młodziczka', DATA.f_liga||[])); // jeśli masz widok ligi
-  } else if (kind === 'f_final') {
-    mount.appendChild(renderFinalView(DATA.f_final||[], 'Młodziczka'));
-  }
-}
-
-// ===== START APLIKACJI =====
-async function boot(){
-  try{
-    const res = await fetch(WEB_APP_URL, { cache:'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    DATA = await res.json();
-  }catch(err){
-    const mount = document.getElementById('view');
-    mount.innerHTML = `<div class="card"><div class="card-header"><h2>Błąd</h2></div><div class="card-body"><p class="muted">Nie udało się pobrać danych z Apps Script.<br> Szczegóły: ${err}</p></div></div>`;
-    return;
-  }
-
-  // Obsługa zakładek
-  document.querySelectorAll('.tab-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      setActive(btn);
-      renderView(btn.dataset.view);
-    });
-  });
-
-  // Domyślny start (zmień, jeśli chcesz inny)
-  renderView('m_rozstaw1');
-}
-boot();
-
-// card helper
-function makeCard(title, innerEl){
-  const card=document.createElement('div'); card.className='card';
-  const head=document.createElement('div'); head.className='card-header'; head.innerHTML=`<h2>${title}</h2>`;
-  const body=document.createElement('div'); body.className='card-body'; body.appendChild(innerEl);
-  card.appendChild(head); card.appendChild(body); return card;
-}
-
-// widoki
+// ========= Widoki logiczne =========
 function viewRozstaw(label, rows){
   const groups = groupByRozstaw(rows);
   const root=document.createElement('div');
@@ -376,7 +290,6 @@ function viewRozstaw(label, rows){
   if (!root.children.length){ root.appendChild(makeCard(`${label} – Rozstaw`, document.createTextNode('Brak danych'))); }
   return root;
 }
-
 function viewLigaM(rows){
   const byLiga = groupByLiga(rows, 5); // kolumna „Liga”
   const root=document.createElement('div');
@@ -391,9 +304,8 @@ function viewLigaM(rows){
   if (!root.children.length){ root.appendChild(makeCard(`Młodzik – Liga`, document.createTextNode('Brak danych'))); }
   return root;
 }
-
 function viewLigaF(rows){
-  const byLiga = groupByLiga(rows, 5);
+  const byLiga = groupByLiga(rows, 5); // kolumna „Liga”
   const root=document.createElement('div');
   const order=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
   Object.keys(byLiga).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(l=>{
@@ -406,32 +318,34 @@ function viewLigaF(rows){
   if (!root.children.length){ root.appendChild(makeCard(`Młodziczka – Liga`, document.createTextNode('Brak danych'))); }
   return root;
 }
-
-function viewFinal(label, rows){
-  const root=document.createElement('div');
-  const grid=document.createElement('div'); grid.className='grid';
-  const term = renderTermFinal(`${label} – Finał`, rows);
-  const rank = renderRanking(`Ranking – ${label} – Finał`, computeTable(rows));
-  grid.appendChild(term); grid.appendChild(rank); root.appendChild(grid);
-  return root;
+function renderFinalView(allRows, label){
+  const view = document.createElement('div');
+  const grid = document.createElement('div'); grid.className='grid';
+  const term = renderTermFinal(`${label} – Finał`, allRows);
+  const table = computeTable(allRows);
+  const kind = (label==='Młodzik') ? 'mlodzik' : (label==='Młodziczka' ? 'mlodziczka' : undefined);
+  const rank = kind ? renderRanking(`Ranking – ${label} – Finał`, table, { final:true, kind }) : renderRanking(`Ranking – ${label} – Finał`, table);
+  grid.appendChild(term); grid.appendChild(rank); view.appendChild(grid);
+  return view;
 }
 
-// app
+// ========= Router zakładek =========
 let DATA=null;
 function setActive(btn){ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
 function renderView(kind){
   const mount=document.getElementById('view'); mount.innerHTML='';
   if (!DATA) return;
-  if (kind==='m_roz1')      mount.appendChild( viewRozstaw('Młodzik', DATA.m_rozstaw_i||[]) );
-  else if (kind==='m_roz2') mount.appendChild( viewRozstaw('Młodzik', DATA.m_rozstaw_ii||[]) );
-  else if (kind==='m_liga') mount.appendChild( viewLigaM(DATA.m_liga||[]) );
-  else if (kind==='m_final')mount.appendChild( viewFinal('Młodzik', DATA.m_final||[]) );
-  else if (kind==='f_roz1') mount.appendChild( viewRozstaw('Młodziczka', DATA.f_rozstaw_i||[]) );
-  else if (kind==='f_roz2') mount.appendChild( viewRozstaw('Młodziczka', DATA.f_rozstaw_ii||[]) );
-  else if (kind==='f_liga') mount.appendChild( viewLigaF(DATA.f_liga||[]) );
-  else if (kind==='f_final')mount.appendChild( viewFinal('Młodziczka', DATA.f_final||[]) );
+  if (kind==='m_roz1')      mount.appendChild( viewRozstaw('Młodzik',     DATA.m_rozstaw_i  ||[]) );
+  else if (kind==='m_roz2') mount.appendChild( viewRozstaw('Młodzik',     DATA.m_rozstaw_ii ||[]) );
+  else if (kind==='m_liga') mount.appendChild( viewLigaM(                 DATA.m_liga       ||[]) );
+  else if (kind==='m_final')mount.appendChild( renderFinalView(           DATA.m_final      ||[], 'Młodzik') );
+  else if (kind==='f_roz1') mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_i  ||[]) );
+  else if (kind==='f_roz2') mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_ii ||[]) );
+  else if (kind==='f_liga') mount.appendChild( viewLigaF(                 DATA.f_liga       ||[]) );
+  else if (kind==='f_final')mount.appendChild( renderFinalView(           DATA.f_final      ||[], 'Młodziczka') );
 }
 
+// ========= Start =========
 async function boot(){
   try{
     const res = await fetch(WEB_APP_URL, {cache:'no-store'});
@@ -443,13 +357,20 @@ async function boot(){
     mount.appendChild(card);
     return;
   }
-
   document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{ setActive(btn); renderView(btn.dataset.view); });
   });
-  renderView('m_roz1'); // start
+  renderView('m_roz1'); // domyślnie
 }
 boot();
+
+// ========= makeCard helper =========
+function makeCard(title, innerEl){
+  const card=document.createElement('div'); card.className='card';
+  const head=document.createElement('div'); head.className='card-header'; head.innerHTML=`<h2>${title}</h2>`;
+  const body=document.createElement('div'); body.className='card-body'; body.appendChild(innerEl);
+  card.appendChild(head); card.appendChild(body); return card;
+}
 </script>
 </body>
 </html>
