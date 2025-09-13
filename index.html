@@ -207,15 +207,44 @@ function renderTermFinal(title, rows){
   return makeCard(title, makeTableEl(headers, mapped));
 }
 
-// ranking
-function renderRanking(title, tableRows){
-  const headers=['Miejsce','Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty'];
-  const rows = tableRows.map((t,idx)=>[
-    idx+1, t.team, t.matches, t.wins, t.losses,
-    `${t.setsFor}:${t.setsAgainst}`,
-    `${t.smallFor}:${t.smallAgainst}  (${t.smallFor - t.smallAgainst >=0?'+':''}${t.smallFor - t.smallAgainst})`,
-    t.points
-  ]);
+// ===== BONUSY KLASYFIKACYJNE =====
+// np. Młodzik: maxBonus=16, Młodziczka: maxBonus=42
+function classificationBonus(place, maxBonus){
+  const p = maxBonus - (place - 1);
+  return p >= 1 ? p : 1;
+}
+
+// ===== RANKING (z/bez bonusów) =====
+// renderRanking(title, tableRows, opts?)
+//   opts = { final: true/false, maxBonus: number }
+function renderRanking(title, tableRows, opts = {}){
+  const isFinal  = !!opts.final;
+  const maxBonus = Number(opts.maxBonus || 0);
+
+  let headers, rows;
+  if (!isFinal){
+    headers = ['Miejsce','Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty'];
+    rows = tableRows.map((t,idx)=>[
+      idx+1, t.team, t.matches, t.wins, t.losses,
+      `${t.setsFor}:${t.setsAgainst}`,
+      `${t.smallFor}:${t.smallAgainst} (${t.smallFor - t.smallAgainst >=0?'+':''}${t.smallFor - t.smallAgainst})`,
+      t.points
+    ]);
+  } else {
+    headers = ['Miejsce','Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty meczowe','Klasyfikacyjne','Razem'];
+    rows = tableRows.map((t,idx)=>{
+      const place = idx+1;
+      const bonus = classificationBonus(place, maxBonus);
+      const total = t.points + bonus;
+      return [
+        place, t.team, t.matches, t.wins, t.losses,
+        `${t.setsFor}:${t.setsAgainst}`,
+        `${t.smallFor}:${t.smallAgainst} (${t.smallFor - t.smallAgainst >=0?'+':''}${t.smallFor - t.smallAgainst})`,
+        t.points, bonus, total
+      ];
+    });
+  }
+
   return makeCard(title, makeTableEl(headers, rows));
 }
 
