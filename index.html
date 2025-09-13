@@ -19,6 +19,7 @@
   header{background:var(--blue);color:#fff;padding:18px 16px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
   header .wrap{max-width:1200px;margin:0 auto;}
   h1{margin:0;font-size:clamp(18px,2.3vw,24px);font-weight:700;}
+
   .container{max-width:1200px;margin:24px auto;padding:0 16px;}
 
   .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
@@ -51,16 +52,14 @@
   tbody tr:nth-child(even) td{background:var(--row-alt)}
   td.left{text-align:left}
   .note{color:var(--muted); font-size:12px; margin-top:6px}
-
   .muted{color:var(--muted)}
 
   /* Chipy/status + podświetlenie wierszy */
-.chip{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
-.chip-upcoming{background:#eef2ff;color:#1e3a8a;border:1px solid #c7d2fe}
-.chip-played{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
-
-tr.row-upcoming td{background:#f8fafc !important} /* delikatne tło */
-tr.row-played   td{background:#f0fdf4 !important}
+  .chip{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
+  .chip-upcoming{background:#eef2ff;color:#1e3a8a;border:1px solid #c7d2fe}
+  .chip-played{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
+  tr.row-upcoming td{background:#f8fafc !important}
+  tr.row-played   td{background:#f0fdf4 !important}
 </style>
 </head>
 <body>
@@ -83,10 +82,10 @@ tr.row-played   td{background:#f0fdf4 !important}
 </main>
 
 <script>
-/* <<< PODAJ SWÓJ LINK DO APPS SCRIPT >>> */
+/* <<< PODMIEN TYLKO SCRIPT ID PONIŻEJ >>> */
 const WEB_APP_URL =
   "https://corsproxy.io/?" + encodeURIComponent(
-    "https://script.google.com/macros/s/AKfycbzOZRmDTg3aSqEK4ut7NZRMzcmhsTjWCRtKKgMdZKkZ7JBV9rjO3_5IRKZgMVmX/exec?action=get"
+    "https://script.google.com/macros/s/AKfycbzOZRmDTg3aSqEK4ut7NZRMzcmhsTjWCRtKKgMdZKkZ7JBV9rjO3_5IRKZgMVmX/exec?action=get&cb=" + Date.now()
   );
 
 /* ======== NARZĘDZIA ======== */
@@ -110,6 +109,7 @@ function fmtPL(v){
   const d = parseDateAny(v);
   return d ? d.toLocaleDateString('pl-PL') : (v ?? '');
 }
+
 function makeTableEl(headers, rows){
   const wrap = document.createElement('div');
   wrap.className = 'table-wrap';
@@ -125,7 +125,7 @@ function makeTableEl(headers, rows){
       const td = document.createElement('td');
       if (cell && cell.__html){ td.innerHTML = cell.__html; }
       else { td.textContent = (cell ?? ''); }
-      if (idx===0 && typeof cell === 'string') td.classList.add('left');
+      if (idx===0 && (typeof cell === 'string' || (cell && cell.__html))) td.classList.add('left');
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
@@ -135,7 +135,6 @@ function makeTableEl(headers, rows){
 }
 
 /* ======== PARSOWANIE SETÓW ======== */
-// Sety zapis: "25:20 22:25 15:13"
 function parseSets(setsStr){
   const txt = (setsStr||'').toString().trim();
   if (!txt) return {hSets:0,aSets:0,hPts:0,aPts:0};
@@ -151,9 +150,8 @@ function parseSets(setsStr){
 }
 
 /* ======== PUNKTACJA (2/1 dla wszystkich) ======== */
-// zwycięzca 2 pkt, przegrany 1 pkt — tylko jeśli mecz rozegrany (>= 1 set)
 function matchPointsTwoOne(hSets, aSets){
-  if ((hSets + aSets) === 0) return {home:0, away:0};
+  if ((hSets + aSets) === 0) return {home:0, away:0}; // brak rozegrania
   if (hSets > aSets) return {home:2, away:1};
   if (aSets > hSets) return {home:1, away:2};
   return {home:0, away:0}; // remis nie występuje
@@ -213,6 +211,26 @@ function classificationBonus(place){
   return p >= 1 ? p : 1;
 }
 
+/* ======== STATUS MECZU ======== */
+function hasScoreOrSets(score, sets){
+  const sOk = typeof score === 'string' && score.includes(':');
+  const setsOk = typeof sets === 'string' && /\d+:\d+/.test(sets);
+  return sOk || setsOk;
+}
+function isUpcomingDate(rawDate){
+  const d = parseDateAny(rawDate);
+  if (!d) return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return d >= today;
+}
+function statusBadge(row){
+  const [rawDate, , , score, sets] = row;
+  const played = hasScoreOrSets(score, sets);
+  if (played) return { text:'✅ Rozegrany', cls:'chip-played', rowCls:'row-played' };
+  if (isUpcomingDate(rawDate)) return { text:'⏳ Nadchodzący', cls:'chip-upcoming', rowCls:'row-upcoming' };
+  return { text:'—', cls:'', rowCls:'' };
+}
+
 /* ======== BLOKI WIDOKU ======== */
 function renderTerminarzBlock(title, rows){
   const card = document.createElement('div'); card.className='card';
@@ -220,7 +238,6 @@ function renderTerminarzBlock(title, rows){
   head.innerHTML = `<h2>${title}</h2>`;
   const body = document.createElement('div'); body.className='card-body';
 
-  // DORZUCAMY kolumnę "Status" przed "Protokół"
   const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Grupa','Podgrupa','Status','Protokół'];
 
   const mapped = rows.slice().sort((a,b)=>{
@@ -231,14 +248,10 @@ function renderTerminarzBlock(title, rows){
     const proto = isUrl(r[7]) ? {__html:`<a href="${r[7]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
     const st = statusBadge(r);
     const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
-
-    // dołącz „znacznik” klasy wiersza na pierwszej komórce (użyjemy go przy renderze)
     const dateCell = {__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
-
     return [dateCell, r[1], r[2], r[3]||'', r[4]||'', r[5]||'', r[6]||'', badge, proto];
   });
 
-  // renderer z obsługą klasy wiersza (row-upcoming/row-played)
   const wrap = document.createElement('div');
   wrap.className = 'table-wrap';
   const table = document.createElement('table');
@@ -257,7 +270,6 @@ function renderTerminarzBlock(title, rows){
       else { td.textContent = (cell ?? ''); }
       if (idx===0){
         td.classList.add('left');
-        // odczytaj klasę wiersza z data-rowcls osadzonego w dacie
         const span = td.querySelector('span[data-rowcls]');
         const rowCls = span ? span.getAttribute('data-rowcls') : '';
         if (rowCls) tr.classList.add(rowCls);
@@ -273,7 +285,6 @@ function renderTerminarzBlock(title, rows){
   card.appendChild(head); card.appendChild(body);
   return card;
 }
-
 
 function renderRankingBlock(title, tableRows, withFinalBonus=false){
   const card = document.createElement('div'); card.className='card';
@@ -324,7 +335,6 @@ function renderRankingBlock(title, tableRows, withFinalBonus=false){
 function normGroupLabel(g){
   if (!g) return '';
   const s = g.toString().trim().toUpperCase();
-  // akceptujemy "I", "II", "III"… lub "1","2","3" (zamieniamy na rzymskie I/II/III… w wyświetlaniu)
   if (/^\d+$/.test(s)){
     const n = parseInt(s,10);
     const romans = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV'];
@@ -333,11 +343,11 @@ function normGroupLabel(g){
   return s; // już I/II…
 }
 function groupByGroupAndSub(rows){
-  // zwraca: { 'I': { 'A': [...], 'B': [...] }, 'II': {...}, ... }
+  // { 'I': { 'A': [...], 'B': [...] }, 'II': {...}, ... }
   const out = {};
   rows.forEach(r=>{
-    const g = normGroupLabel(r[5]||''); // kolumna Grupa
-    const sub = (r[6]||'').toString().trim().toUpperCase(); // kolumna Podgrupa
+    const g = normGroupLabel(r[5]||'');
+    const sub = (r[6]||'').toString().trim().toUpperCase();
     if (!g || !sub) return;
     out[g] ||= {A:[], B:[]};
     if (sub === 'A' || sub === 'B'){
@@ -346,39 +356,14 @@ function groupByGroupAndSub(rows){
   });
   return out;
 }
-  function hasScoreOrSets(score, sets){
-  const sOk = typeof score === 'string' && score.includes(':');
-  const setsOk = typeof sets === 'string' && /\d+:\d+/.test(sets);
-  return sOk || setsOk;
-}
-
-function isUpcomingDate(rawDate){
-  const d = parseDateAny(rawDate);
-  if (!d) return false;
-  const today = new Date(); today.setHours(0,0,0,0);
-  return d >= today;
-}
-
-function statusBadge(row){
-  const [rawDate, , , score, sets] = row;
-  const played = hasScoreOrSets(score, sets);
-  if (played) return { text:'✅ Rozegrany', cls:'chip-played', rowCls:'row-played' };
-  if (isUpcomingDate(rawDate)) return { text:'⏳ Nadchodzący', cls:'chip-upcoming', rowCls:'row-upcoming' };
-  // po terminie, ale brak wyniku – traktujemy neutralnie
-  return { text:'—', cls:'', rowCls:'' };
-}
 
 /* ======== WIDOKI ======== */
-function renderElimView(allRows, label){ // label: "Młodzik" / "Młodziczka"
-  // Grupa I/II/III… → Podgrupa A/B
+function renderElimView(allRows, label){
   const groups = groupByGroupAndSub(allRows);
   const view = document.createElement('div');
 
-  // sortuj grupy po rzymskich (I, II, III…)
-  const groupKeys = Object.keys(groups).sort((a,b)=>{
-    const order = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV'];
-    return (order.indexOf(a) - order.indexOf(b));
-  });
+  const order = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV'];
+  const groupKeys = Object.keys(groups).sort((a,b)=> order.indexOf(a) - order.indexOf(b));
 
   if (groupKeys.length === 0){
     const card = document.createElement('div'); card.className='card';
@@ -392,14 +377,12 @@ function renderElimView(allRows, label){ // label: "Młodzik" / "Młodziczka"
   }
 
   groupKeys.forEach(g=>{
-    const pack = groups[g];
-    // Każdą podgrupę (A i B) pokazujemy jako: Terminarz + Ranking (2/1, do 2 setów)
     ['A','B'].forEach(sub=>{
-      const rows = pack[sub] || [];
+      const rows = (groups[g] && groups[g][sub]) || [];
       if (rows.length === 0) return;
       const grid = document.createElement('div'); grid.className='grid';
       const term = renderTerminarzBlock(`${label} – Eliminacje – Grupa ${g} – Podgrupa ${sub}`, rows);
-      const table = computeTable(rows); // 2/1 dla wszystkich kategorii
+      const table = computeTable(rows);
       const rank = renderRankingBlock(`Ranking – ${label} – Grupa ${g} – Podgrupa ${sub}`, table, false);
       grid.appendChild(term); grid.appendChild(rank);
       view.appendChild(grid);
@@ -414,7 +397,7 @@ function renderFinalView(allRows, label){
   const grid = document.createElement('div'); grid.className='grid';
 
   const term = renderTerminarzBlock(`${label} – Finał`, allRows);
-  const table = computeTable(allRows); // 2/1 dla wszystkich
+  const table = computeTable(allRows);
   const rank = renderRankingBlock(`Ranking – ${label} – Finał (z klasyfikacją 15..1)`, table, true);
 
   grid.appendChild(term); grid.appendChild(rank);
@@ -446,20 +429,35 @@ function renderView(kind){
 }
 
 async function boot(){
-  const res = await fetch(WEB_APP_URL, {cache:'no-store'});
-  DATA = await res.json();
+  try{
+    const res = await fetch(WEB_APP_URL, { cache:'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    DATA = await res.json();
+    console.log('DATA:', DATA);
 
-  document.querySelectorAll('.tab-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      setActive(btn);
-      renderView(btn.dataset.view);
+    document.querySelectorAll('.tab-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        setActive(btn);
+        renderView(btn.dataset.view);
+      });
     });
-  });
 
-  renderView('m_elim'); // start
+    renderView('m_elim'); // start
+  }catch(err){
+    console.error("Fetch error:", err);
+    const mount = document.getElementById('view');
+    mount.innerHTML = `
+      <div class="card">
+        <div class="card-header"><h2>Błąd wczytywania</h2></div>
+        <div class="card-body">
+          <p class="muted">Nie udało się pobrać danych z Apps Script.</p>
+          <p class="muted">Szczegóły: ${String(err)}</p>
+          <p class="muted">Sprawdź: wdrożenie Web app (Anyone), poprawne nazwy arkuszy oraz podmieniony SCRIPT ID.</p>
+        </div>
+      </div>`;
+  }
 }
 boot();
-
 </script>
 </body>
 </html>
