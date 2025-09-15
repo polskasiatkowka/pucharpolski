@@ -36,7 +36,30 @@
   .chip-played{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
   tr.row-upcoming td{background:#f8fafc !important}
   tr.row-played td{background:#f0fdf4 !important}
-  
+
+  /* Ekran ładowania */
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.loading-logo {
+  width: 120px;
+  animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
   
 </style>
 </head>
@@ -386,6 +409,9 @@ async function boot(){
     btn.addEventListener('click', ()=>{ setActive(btn); renderView(btn.dataset.view); });
   });
   renderView('m_roz1'); // domyślnie
+
+  // 🔽 schowaj ekran ładowania
+  document.getElementById('loading-screen').style.display = 'none';
 }
 boot();
 
