@@ -59,12 +59,26 @@
   50%  { opacity: 0.4; }
   100% { opacity: 1; }
 }
+.header-flex {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* odstęp między logo a tytułem */
+}
+.logo {
+  height: 40px; /* dopasuj wysokość loga */
+  width: auto;
+}
 
   
 </style>
 </head>
 <body>
-<header><div class="wrap"><h1>Rozgrywki młodzieżowe – terminarze i rankingi</h1></div></header>
+<header>
+  <div class="wrap header-flex">
+    <img src="logo-pzps.png" alt="Logo PZPS" class="logo" />
+    <h1>Rozgrywki młodzieżowe – terminarze i rankingi</h1>
+  </div>
+</header>
 
 <main class="container">
   <div class="tabs">
