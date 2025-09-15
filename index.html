@@ -51,6 +51,9 @@
     <button class="tab-btn" data-view="f_roz2">Młodziczka – Rozstaw II</button>
     <button class="tab-btn" data-view="f_liga">Młodziczka – Liga</button>
     <button class="tab-btn" data-view="f_final">Młodziczka – Finał</button>
+    <button class="tab-btn" data-view="m_overall">Młodzik – Ranking ogólny</button>
+    <button class="tab-btn" data-view="f_overall">Młodziczka – Ranking ogólny</button>
+
   </div>
   <div id="view"></div>
 </main>
@@ -318,6 +321,19 @@ function viewLigaF(rows){
   if (!root.children.length){ root.appendChild(makeCard(`Młodziczka – Liga`, document.createTextNode('Brak danych'))); }
   return root;
 }
+  // ===== Ranking ogólny z 5 kolejek (sumuje wszystkie mecze z arkusza LIGA) =====
+function viewOverall(label, rows){
+  const root = document.createElement('div');
+
+  // computeTable liczy systemem 2/1 (mamy to już w kodzie)
+  const table = computeTable(rows);
+
+  // gotowy renderer tabeli (bez bonusów, zwykłe M/W/P itd.)
+  const rank = renderRanking(`Ranking ogólny – ${label}`, table);
+
+  root.appendChild(rank);
+  return root;
+}
 function renderFinalView(allRows, label){
   const view = document.createElement('div');
   const grid = document.createElement('div'); grid.className='grid';
@@ -343,6 +359,8 @@ function renderView(kind){
   else if (kind==='f_roz2') mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_ii ||[]) );
   else if (kind==='f_liga') mount.appendChild( viewLigaF(                 DATA.f_liga       ||[]) );
   else if (kind==='f_final')mount.appendChild( renderFinalView(           DATA.f_final      ||[], 'Młodziczka') );
+  else if (kind==='m_overall') mount.appendChild( viewOverall('Młodzik', DATA.m_liga||[]) );
+  else if (kind==='f_overall') mount.appendChild( viewOverall('Młodziczka', DATA.f_liga||[]) );
 }
 
 // ========= Start =========
