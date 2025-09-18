@@ -503,8 +503,8 @@ function renderView(kind){
   else if (kind==='f_final')    mount.appendChild( renderFinalView(           DATA.f_final      || [], 'Młodziczka') );
   else if (kind === 'm_liga')   mount.appendChild( viewLigaM( getLigaRows('m', CURRENT_M_ROUND) ) );
   else if (kind === 'f_liga')   mount.appendChild( viewLigaF( getLigaRows('f', CURRENT_F_ROUND) ) );
-  else if (kind === 'm_overall')mount.appendChild( viewOverallManual('Młodzik',     getLigaAllRows('m') ) );
-  else if (kind === 'f_overall')mount.appendChild( viewOverallManual('Młodziczka',  getLigaAllRows('f') ) );
+  else if (kind === 'm_overall')mount.appendChild( viewOverallManual('Młodzik',     DATA.m_overall || []) );
+  else if (kind === 'f_overall')mount.appendChild( viewOverallManual('Młodziczka',  DATA.f_overall || []) );
 }
 
 // ========= Start =========
