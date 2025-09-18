@@ -431,21 +431,56 @@ function renderFinalView(allRows, label){
   
 
 // ========= Router zakładek =========
-let DATA=null;
-function setActive(btn){ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+let DATA = null;
+
+// --- wybór rund ligi (M/F) ---
+let CURRENT_M_ROUND = 1; // startowo Turniej 1
+let CURRENT_F_ROUND = 1;
+
+// --- helpery do pobierania wierszy z LIGI ---
+function getLigaRows(kind, round){
+  // kind: 'm' | 'f', round: 1..5
+  const keyArray  = `${kind}_liga`;           // np. m_liga (gdy jest obiekt/„tablica” z rundami)
+  const keySingle = `${kind}_liga${round}`;   // np. m_liga1 … m_liga5 (gdy są osobne pola)
+
+  // wariant: { m_liga: {1:[...],2:[...],...} } lub { m_liga: [ , [...],[...], ... ] }
+  if (DATA && DATA[keyArray] && (typeof DATA[keyArray] === 'object')) {
+    return DATA[keyArray][round] || [];
+  }
+  // wariant: { m_liga1:[...], m_liga2:[...], ... }
+  return (DATA && DATA[keySingle]) ? DATA[keySingle] : [];
+}
+
+function getLigaAllRows(kind){
+  let out = [];
+  for (let r = 1; r <= 5; r++) {
+    const chunk = getLigaRows(kind, r);
+    if (Array.isArray(chunk)) out = out.concat(chunk);
+  }
+  return out;
+}
+
+// podświetlanie aktywnej zakładki
+function setActive(btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
 function renderView(kind){
-  const mount=document.getElementById('view'); mount.innerHTML='';
+  const mount = document.getElementById('view');
+  mount.innerHTML = '';
   if (!DATA) return;
-  if (kind==='m_roz1')      mount.appendChild( viewRozstaw('Młodzik',     DATA.m_rozstaw_i  ||[]) );
-  else if (kind==='m_roz2') mount.appendChild( viewRozstaw('Młodzik',     DATA.m_rozstaw_ii ||[]) );
-  else if (kind === 'm_liga') mount.appendChild(viewLigaM(DATA.m_liga?.[CURRENT_M_ROUND] || []));
-  else if (kind==='m_final')mount.appendChild( renderFinalView(           DATA.m_final      ||[], 'Młodzik') );
-  else if (kind==='f_roz1') mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_i  ||[]) );
-  else if (kind==='f_roz2') mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_ii ||[]) );
-  else if (kind === 'f_liga') mount.appendChild(viewLigaF(DATA.f_liga?.[CURRENT_F_ROUND] || []));
-  else if (kind==='f_final')mount.appendChild( renderFinalView(           DATA.f_final      ||[], 'Młodziczka') );
-  else if (kind==='m_overall') mount.appendChild( viewOverall('Młodzik', DATA.m_liga||[]) );
-  else if (kind==='f_overall') mount.appendChild( viewOverall('Młodziczka', DATA.f_liga||[]) );
+
+  if (kind==='m_roz1')          mount.appendChild( viewRozstaw('Młodzik',     DATA.m_rozstaw_i  || []) );
+  else if (kind==='m_roz2')     mount.appendChild( viewRozstaw('Młodzik',     DATA.m_rozstaw_ii || []) );
+  else if (kind==='m_final')    mount.appendChild( renderFinalView(           DATA.m_final      || [], 'Młodzik') );
+  else if (kind==='f_roz1')     mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_i  || []) );
+  else if (kind==='f_roz2')     mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_ii || []) );
+  else if (kind==='f_final')    mount.appendChild( renderFinalView(           DATA.f_final      || [], 'Młodziczka') );
+  else if (kind === 'm_liga')   mount.appendChild( viewLigaM( getLigaRows('m', CURRENT_M_ROUND) ) );
+  else if (kind === 'f_liga')   mount.appendChild( viewLigaF( getLigaRows('f', CURRENT_F_ROUND) ) );
+  else if (kind === 'm_overall')mount.appendChild( viewOverall('Młodzik',     getLigaAllRows('m') ) );
+  else if (kind === 'f_overall')mount.appendChild( viewOverall('Młodziczka',  getLigaAllRows('f') ) );
 }
 
 // ========= Start =========
