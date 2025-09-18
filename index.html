@@ -275,6 +275,16 @@ function groupByRozstaw(rows){
   });
   return out;
 }
+  function groupByLiga(rows, ligaColIndex){
+  const out = {};
+  rows.forEach(r=>{
+    const l = normRoman(r[ligaColIndex]||''); 
+    if(!l) return;
+    (out[l] ||= []).push(r);
+  });
+  return out;
+}
+
 
 
 // ========= Renderery terminarzy =========
