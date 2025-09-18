@@ -144,7 +144,7 @@
 <script>
 // ========= KONFIG =========
 // jeśli masz CORS ok na Apps Script, możesz użyć bezpośrednio WEB_APP_URL_BASE + "?action=get"
-const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbwxcm10QSkzvs5uUX3RyRXL3xA5Ci01_bNyuLRjFxYYRIqUo3qE23lt9qwPks75IaXu/exec";
+const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbxMTpDL_bR-V93NdtktY3FCjOcX-9-YnmAxW8iXkYMCoZmhOQZJinKbX4DVUHITd6M9/exec";
 const WEB_APP_URL = "https://corsproxy.io/?" + encodeURIComponent(WEB_APP_URL_BASE + "?action=get&cb=" + Date.now());
 
 // ========= Utils =========
@@ -427,7 +427,31 @@ function renderFinalView(allRows, label){
   grid.appendChild(term); grid.appendChild(rank); view.appendChild(grid);
   return view;
 }
+function viewOverallManual(label, rows){
+  // rows = [Drużyna, T1, T2, T3, T4, T5]
+  const normalized = rows.map(r=>{
+    const team = (r[0] || '').toString().trim();
+    const t = [1,2,3,4,5].map(i => {
+      const v = Number(r[i]);
+      return Number.isFinite(v) ? v : 0;
+    });
+    const total = t.reduce((a,b)=>a+b,0);
+    return { team, t1:t[0], t2:t[1], t3:t[2], t4:t[3], t5:t[4], total };
+  }).filter(x=>x.team);
 
+  // sort: Razem malejąco, potem nazwą
+  normalized.sort((a,b)=>{
+    if (b.total !== a.total) return b.total - a.total;
+    return a.team.localeCompare(b.team,'pl');
+  });
+
+  const headers = ['Miejsce','Drużyna','Turniej 1','Turniej 2','Turniej 3','Turniej 4','Turniej 5','Razem'];
+  const body = normalized.map((x,idx)=>[
+    idx+1, x.team, x.t1, x.t2, x.t3, x.t4, x.t5, x.total
+  ]);
+
+  return makeCard(`Ranking ogólny – ${label} (punkty wpisywane ręcznie)`, makeTableEl(headers, body));
+}
   
 
 // ========= Router zakładek =========
@@ -479,8 +503,8 @@ function renderView(kind){
   else if (kind==='f_final')    mount.appendChild( renderFinalView(           DATA.f_final      || [], 'Młodziczka') );
   else if (kind === 'm_liga')   mount.appendChild( viewLigaM( getLigaRows('m', CURRENT_M_ROUND) ) );
   else if (kind === 'f_liga')   mount.appendChild( viewLigaF( getLigaRows('f', CURRENT_F_ROUND) ) );
-  else if (kind === 'm_overall')mount.appendChild( viewOverall('Młodzik',     getLigaAllRows('m') ) );
-  else if (kind === 'f_overall')mount.appendChild( viewOverall('Młodziczka',  getLigaAllRows('f') ) );
+  else if (kind === 'm_overall')mount.appendChild( viewOverallManual('Młodzik',     getLigaAllRows('m') ) );
+  else if (kind === 'f_overall')mount.appendChild( viewOverallManual('Młodziczka',  getLigaAllRows('f') ) );
 }
 
 // ========= Start =========
