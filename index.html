@@ -69,6 +69,20 @@
   width: auto;
 }
 
+  .dropdown { position: relative; }
+.dropdown .submenu {
+  position: absolute; top: 100%; left: 0;
+  background: #fff; border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(13,59,102,.12);
+  padding: 6px; display: none; z-index: 10; min-width: 180px;
+}
+.dropdown.open .submenu { display: block; }
+.sub-btn {
+  display: block; width: 100%; text-align: left;
+  border: 0; background: #fff; padding: 8px 10px; border-radius: 8px; cursor: pointer;
+}
+.sub-btn:hover { background: var(--row-alt); }
+
   
 </style>
 </head>
@@ -84,21 +98,46 @@
   <div class="tabs">
     <button class="tab-btn active" data-view="m_roz1">Młodzik – Rozstaw I</button>
     <button class="tab-btn" data-view="m_roz2">Młodzik – Rozstaw II</button>
-    <button class="tab-btn" data-view="m_liga">Młodzik – Liga</button>
     <button class="tab-btn" data-view="m_final">Młodzik – Finał</button>
+
     <button class="tab-btn" data-view="f_roz1">Młodziczka – Rozstaw I</button>
     <button class="tab-btn" data-view="f_roz2">Młodziczka – Rozstaw II</button>
-    <button class="tab-btn" data-view="f_liga">Młodziczka – Liga</button>
     <button class="tab-btn" data-view="f_final">Młodziczka – Finał</button>
+
     <button class="tab-btn" data-view="m_overall">Młodzik – Ranking ogólny</button>
     <button class="tab-btn" data-view="f_overall">Młodziczka – Ranking ogólny</button>
 
+    <!-- MŁODZIK – LIGA (dropdown) -->
+    <div class="dropdown">
+      <button class="tab-btn dropdown-toggle" data-view="m_liga" aria-expanded="false">Młodzik – Liga ▾</button>
+      <div class="submenu">
+        <button class="sub-btn" data-view="m_liga" data-round="1">Turniej 1</button>
+        <button class="sub-btn" data-view="m_liga" data-round="2">Turniej 2</button>
+        <button class="sub-btn" data-view="m_liga" data-round="3">Turniej 3</button>
+        <button class="sub-btn" data-view="m_liga" data-round="4">Turniej 4</button>
+        <button class="sub-btn" data-view="m_liga" data-round="5">Turniej 5</button>
+      </div>
+    </div>
+
+    <!-- MŁODZICZKA – LIGA (dropdown) -->
+    <div class="dropdown">
+      <button class="tab-btn dropdown-toggle" data-view="f_liga" aria-expanded="false">Młodziczka – Liga ▾</button>
+      <div class="submenu">
+        <button class="sub-btn" data-view="f_liga" data-round="1">Turniej 1</button>
+        <button class="sub-btn" data-view="f_liga" data-round="2">Turniej 2</button>
+        <button class="sub-btn" data-view="f_liga" data-round="3">Turniej 3</button>
+        <button class="sub-btn" data-view="f_liga" data-round="4">Turniej 4</button>
+        <button class="sub-btn" data-view="f_liga" data-round="5">Turniej 5</button>
+      </div>
+    </div>
   </div>
+
   <!-- Ekran ładowania -->
   <div id="loading-screen">
     <img src="logo-pzps.png" alt="PZPS" class="loading-logo">
     <p>Ładowanie danych...</p>
   </div>
+
   <div id="view"></div>
 </main>
 
@@ -389,6 +428,8 @@ function renderFinalView(allRows, label){
   return view;
 }
 
+  
+
 // ========= Router zakładek =========
 let DATA=null;
 function setActive(btn){ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
@@ -397,11 +438,11 @@ function renderView(kind){
   if (!DATA) return;
   if (kind==='m_roz1')      mount.appendChild( viewRozstaw('Młodzik',     DATA.m_rozstaw_i  ||[]) );
   else if (kind==='m_roz2') mount.appendChild( viewRozstaw('Młodzik',     DATA.m_rozstaw_ii ||[]) );
-  else if (kind==='m_liga') mount.appendChild( viewLigaM(                 DATA.m_liga       ||[]) );
+  else if (kind === 'm_liga') mount.appendChild(viewLigaM(DATA.m_liga?.[CURRENT_M_ROUND] || []));
   else if (kind==='m_final')mount.appendChild( renderFinalView(           DATA.m_final      ||[], 'Młodzik') );
   else if (kind==='f_roz1') mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_i  ||[]) );
   else if (kind==='f_roz2') mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_ii ||[]) );
-  else if (kind==='f_liga') mount.appendChild( viewLigaF(                 DATA.f_liga       ||[]) );
+  else if (kind === 'f_liga') mount.appendChild(viewLigaF(DATA.f_liga?.[CURRENT_F_ROUND] || []));
   else if (kind==='f_final')mount.appendChild( renderFinalView(           DATA.f_final      ||[], 'Młodziczka') );
   else if (kind==='m_overall') mount.appendChild( viewOverall('Młodzik', DATA.m_liga||[]) );
   else if (kind==='f_overall') mount.appendChild( viewOverall('Młodziczka', DATA.f_liga||[]) );
@@ -428,6 +469,62 @@ async function boot(){
   document.getElementById('loading-screen').style.display = 'none';
 }
 boot();
+
+  // wybrane rundy (jeśli jeszcze nie masz)
+let CURRENT_M_ROUND = 1;
+let CURRENT_F_ROUND = 1;
+
+// toggle dropdownów
+function setupDropdowns(){
+  // otwieranie/zamykanie
+  document.querySelectorAll('.dropdown .dropdown-toggle').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const dd = btn.closest('.dropdown');
+      const isOpen = dd.classList.toggle('open');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+  });
+  // zamykanie po kliknięciu poza
+  document.addEventListener('click', ()=> {
+    document.querySelectorAll('.dropdown.open').forEach(dd=>{
+      dd.classList.remove('open');
+      const toggle = dd.querySelector('.dropdown-toggle');
+      if (toggle) toggle.setAttribute('aria-expanded','false');
+    });
+  });
+  // klik w pozycje submenu
+  document.querySelectorAll('.dropdown .submenu .sub-btn').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const view = btn.dataset.view;         // 'm_liga' | 'f_liga'
+      const round = parseInt(btn.dataset.round, 10) || 1;
+      if (view === 'm_liga') CURRENT_M_ROUND = round;
+      if (view === 'f_liga') CURRENT_F_ROUND = round;
+
+      // podświetl główny przycisk jako aktywny
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      const parentToggle = btn.closest('.dropdown').querySelector('.dropdown-toggle');
+      if (parentToggle) parentToggle.classList.add('active');
+
+      // render odpowiedniego widoku
+      renderView(view);
+
+      // zamknij submenu
+      const dd = btn.closest('.dropdown');
+      if (dd) dd.classList.remove('open');
+      if (parentToggle) parentToggle.setAttribute('aria-expanded','false');
+    });
+  });
+}
+
+// wywołaj po zainicjowaniu zakładek i danych
+// …w Twoim boot():
+// document.querySelectorAll('.tab-btn').forEach(...)
+// renderView('m_rozstaw1')  // lub co tam masz
+// ↓ dodaj:
+setupDropdowns();
+
 
 // ========= makeCard helper =========
 function makeCard(title, innerEl){
