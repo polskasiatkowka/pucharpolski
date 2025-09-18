@@ -83,6 +83,12 @@
 }
 .sub-btn:hover { background: var(--row-alt); }
 
+  /* TOP kwalifikacja w rankingu ogólnym */
+tr.qualify td{
+  background:#ecfdf5 !important;  /* jasnozielone tło */
+  color:#065f46;                   /* ciemnozielony tekst */
+  font-weight:600;
+}
   
 </style>
 </head>
@@ -450,7 +456,17 @@ function viewOverallManual(label, rows){
     idx+1, x.team, x.t1, x.t2, x.t3, x.t4, x.t5, x.total
   ]);
 
-  return makeCard(`Ranking ogólny – ${label} (punkty wpisywane ręcznie)`, makeTableEl(headers, body));
+  // zbuduj tabelę
+  const tableEl = makeTableEl(headers, body);
+
+  // ile wierszy ma być na zielono
+  const top = (label === 'Młodziczka') ? 6 : (label === 'Młodzik') ? 4 : 0;
+
+  // dodaj klasę .qualify pierwszym 'top' wierszom
+  const trs = tableEl.querySelectorAll('tbody tr');
+  trs.forEach((tr, idx)=>{ if (idx < top) tr.classList.add('qualify'); });
+
+  return makeCard(`Ranking ogólny – ${label} (punkty wpisywane ręcznie)`, tableEl);
 }
   
 
