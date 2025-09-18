@@ -256,24 +256,26 @@ function normRoman(g){
   return s;
 }
 function groupByRozstaw(rows){
-  // -> {'I':{A:[...],B:[...]}, ...}  (kol. 5=Grupa, 6=Podgrupa)
+  // -> {'I':{A:[...],B:[...],'o miejsca I-IV':[...],'o miejsca V-VII':[...]} …}
   const out={};
   rows.forEach(r=>{
-    const g=normRoman(r[5]||''); const sub=(r[6]||'').toString().trim().toUpperCase();
-    if(!g||!sub) return;
-    out[g] ||= {A:[],B:[]};
-    if (sub==='A'||sub==='B') out[g][sub].push(r);
+    const g = normRoman(r[5]||'');              // kolumna 5 = Grupa
+    const subRaw = (r[6]||'').toString().trim();
+    const sub = subRaw.toUpperCase();           // normalizujemy
+
+    if(!g || !sub) return;
+
+    // inicjalizacja struktury
+    out[g] ||= {A:[],B:[],'O MIEJSCA I-IV':[],'O MIEJSCA V-VII':[]};
+
+    // rozpoznaj tylko dozwolone podgrupy
+    if (['A','B','O MIEJSCA I-IV','O MIEJSCA V-VII'].includes(sub)){
+      out[g][sub].push(r);
+    }
   });
   return out;
 }
-function groupByLiga(rows, ligaColIndex){
-  const out={};
-  rows.forEach(r=>{
-    const l=normRoman(r[ligaColIndex]||''); if(!l) return;
-    (out[l] ||= []).push(r);
-  });
-  return out;
-}
+
 
 // ========= Renderery terminarzy =========
 function renderTermRozstaw(title, rows){
@@ -364,22 +366,30 @@ function renderRanking(title, tableRows, opts = {}){
   return makeCard(title, makeTableEl(headers, rows));
 }
 
-// ========= Widoki logiczne =========
 function viewRozstaw(label, rows){
   const groups = groupByRozstaw(rows);
   const root=document.createElement('div');
   const order=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
+
   Object.keys(groups).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(g=>{
-    ['A','B'].forEach(sub=>{
+    ['A','B','O MIEJSCA I-IV','O MIEJSCA V-VII'].forEach(sub=>{
       const pack = groups[g][sub];
       if (!pack || pack.length===0) return;
+
       const grid=document.createElement('div'); grid.className='grid';
-      const term = renderTermRozstaw(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
-      const rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – Podgrupa ${sub}`, computeTable(pack));
-      grid.appendChild(term); grid.appendChild(rank); root.appendChild(grid);
+      const niceSub = (sub==='A'||sub==='B') ? `Podgrupa ${sub}` : sub;  // ładniejszy napis
+      const term = renderTermRozstaw(`${label} – Rozstaw ${g} – ${niceSub}`, pack);
+      const rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – ${niceSub}`, computeTable(pack));
+
+      grid.appendChild(term); 
+      grid.appendChild(rank); 
+      root.appendChild(grid);
     });
   });
-  if (!root.children.length){ root.appendChild(makeCard(`${label} – Rozstaw`, document.createTextNode('Brak danych'))); }
+
+  if (!root.children.length){ 
+    root.appendChild(makeCard(`${label} – Rozstaw`, document.createTextNode('Brak danych'))); 
+  }
   return root;
 }
 function viewLigaM(rows){
