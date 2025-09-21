@@ -376,25 +376,33 @@ function renderRanking(title, tableRows, opts = {}){
   return makeCard(title, makeTableEl(headers, rows));
 }
 
-function viewRozstaw(label, rows){
+function viewRozstaw(label, rows, allowedGroups){
   const groups = groupByRozstaw(rows);
-  const root=document.createElement('div');
-  const order=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
+  const root = document.createElement('div');
 
- Object.keys(groups).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(g=>{
-  const subs = Object.keys(groups[g]); // tylko istniejące podgrupy
-  subs.forEach(sub=>{
-    const pack = groups[g][sub];
-    if (!pack || pack.length===0) return;
-    const grid=document.createElement('div'); grid.className='grid';
-    const term = renderTermRozstaw(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
-    const rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – Podgrupa ${sub}`, computeTable(pack));
-    grid.appendChild(term); grid.appendChild(rank); root.appendChild(grid);
+  const order = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
+  let groupKeys = Object.keys(groups).sort((a,b)=> order.indexOf(a)-order.indexOf(b));
+
+  // ⬇ pokaż tylko wybrane grupy (jeśli podane)
+  if (Array.isArray(allowedGroups) && allowedGroups.length){
+    groupKeys = groupKeys.filter(g => allowedGroups.includes(g));
+  }
+
+  groupKeys.forEach(g=>{
+    const subs = Object.keys(groups[g]); // tylko istniejące podgrupy (A/B/…)
+    subs.forEach(sub=>{
+      const pack = groups[g][sub];
+      if (!pack || pack.length===0) return;
+      const grid = document.createElement('div'); grid.className='grid';
+      const term = renderTermRozstaw(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
+      const rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – Podgrupa ${sub}`, computeTable(pack));
+      grid.appendChild(term); grid.appendChild(rank);
+      root.appendChild(grid);
     });
   });
 
-  if (!root.children.length){ 
-    root.appendChild(makeCard(`${label} – Rozstaw`, document.createTextNode('Brak danych'))); 
+  if (!root.children.length){
+    root.appendChild(makeCard(`${label} – Rozstaw`, document.createTextNode('Brak danych')));
   }
   return root;
 }
@@ -527,11 +535,11 @@ function renderView(kind){
   mount.innerHTML = '';
   if (!DATA) return;
 
-  if (kind==='m_roz1')          mount.appendChild( viewRozstaw('Młodzik',     DATA.m_rozstaw_i  || []) );
-  else if (kind==='m_roz2')     mount.appendChild( viewRozstaw('Młodzik',     DATA.m_rozstaw_ii || []) );
+  if (kind==='m_roz1')          mount.appendChild( viewRozstaw('Młodzik',     DATA.m_rozstaw_i  || [], ['I']) );
+  else if (kind==='m_roz2')     mount.appendChild( viewRozstaw('Młodzik',     DATA.m_rozstaw_ii || [], ['II']) );
   else if (kind==='m_final')    mount.appendChild( renderFinalView(           DATA.m_final      || [], 'Młodzik') );
-  else if (kind==='f_roz1')     mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_i  || []) );
-  else if (kind==='f_roz2')     mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_ii || []) );
+  else if (kind==='f_roz1')     mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_i  || [], ['I']) );
+  else if (kind==='f_roz2')     mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_ii || [], ['II']) );
   else if (kind==='f_final')    mount.appendChild( renderFinalView(           DATA.f_final      || [], 'Młodziczka') );
   else if (kind === 'm_liga')   mount.appendChild( viewLigaM( getLigaRows('m', CURRENT_M_ROUND) ) );
   else if (kind === 'f_liga')   mount.appendChild( viewLigaF( getLigaRows('f', CURRENT_F_ROUND) ) );
