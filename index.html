@@ -104,16 +104,7 @@ tr.qualify td{
   <div class="tabs">
     <button class="tab-btn active" data-view="m_roz1">Młodzik – Rozstaw I</button>
     <button class="tab-btn" data-view="m_roz2">Młodzik – Rozstaw II</button>
-    <button class="tab-btn" data-view="m_final">Młodzik – Finał</button>
-
-    <button class="tab-btn" data-view="f_roz1">Młodziczka – Rozstaw I</button>
-    <button class="tab-btn" data-view="f_roz2">Młodziczka – Rozstaw II</button>
-    <button class="tab-btn" data-view="f_final">Młodziczka – Finał</button>
-
-    <button class="tab-btn" data-view="m_overall">Młodzik – Ranking ogólny</button>
-    <button class="tab-btn" data-view="f_overall">Młodziczka – Ranking ogólny</button>
-
-    <!-- MŁODZIK – LIGA (dropdown) -->
+      <!-- MŁODZIK – LIGA (dropdown) -->
     <div class="dropdown">
       <button class="tab-btn dropdown-toggle" data-view="m_liga" aria-expanded="false">Młodzik – Liga ▾</button>
       <div class="submenu">
@@ -123,9 +114,12 @@ tr.qualify td{
         <button class="sub-btn" data-view="m_liga" data-round="4">Turniej 4</button>
         <button class="sub-btn" data-view="m_liga" data-round="5">Turniej 5</button>
       </div>
-    </div>
+    <button class="tab-btn" data-view="m_overall">Młodzik – Ranking ogólny</button>
+    <button class="tab-btn" data-view="m_final">Młodzik – Finał</button>
 
-    <!-- MŁODZICZKA – LIGA (dropdown) -->
+    <button class="tab-btn" data-view="f_roz1">Młodziczka – Rozstaw I</button>
+    <button class="tab-btn" data-view="f_roz2">Młodziczka – Rozstaw II</button>
+     <!-- MŁODZICZKA – LIGA (dropdown) -->
     <div class="dropdown">
       <button class="tab-btn dropdown-toggle" data-view="f_liga" aria-expanded="false">Młodziczka – Liga ▾</button>
       <div class="submenu">
@@ -135,6 +129,13 @@ tr.qualify td{
         <button class="sub-btn" data-view="f_liga" data-round="4">Turniej 4</button>
         <button class="sub-btn" data-view="f_liga" data-round="5">Turniej 5</button>
       </div>
+    <button class="tab-btn" data-view="f_final">Młodziczka – Finał</button>
+    <button class="tab-btn" data-view="f_overall">Młodziczka – Ranking ogólny</button>
+
+  
+    </div>
+
+   
     </div>
   </div>
 
@@ -377,8 +378,8 @@ function viewRozstaw(label, rows){
       const pack = groups[g][sub];
       if (!pack || pack.length===0) return;
       const grid=document.createElement('div'); grid.className='grid';
-      const term = renderTermRozstaw(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
-      const rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – Podgrupa ${sub}`, computeTable(pack));
+      const term = renderTermRozstaw(`${label} – Grupa ${g} – Podgrupa ${sub}`, pack);
+      const rank = renderRanking(`Ranking – ${label} – Grupa ${g} – Podgrupa ${sub}`, computeTable(pack));
       grid.appendChild(term); grid.appendChild(rank); root.appendChild(grid);
     });
   });
