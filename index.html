@@ -497,7 +497,7 @@ function viewOverallManual(label, rows){
   const trs = tableEl.querySelectorAll('tbody tr');
   trs.forEach((tr, idx)=>{ if (idx < top) tr.classList.add('qualify'); });
 
-  return makeCard(`Ranking ogólny – ${label} (punkty wpisywane ręcznie)`, tableEl);
+  return makeCard(`Ranking ogólny – ${label} ()`, tableEl);
 }
   
 
