@@ -89,7 +89,19 @@ tr.qualify td{
   color:#065f46;                   /* ciemnozielony tekst */
   font-weight:600;
 }
-  
+  /* DODAJ / UZUPEŁNIJ */
+.tabs { display:flex; flex-direction:column; gap:10px; }   /* dwie linie zakładek */
+.tabs-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+
+.dropdown { position: relative; display:inline-block; }    /* NIE rozciąga się na całą szerokość */
+.dropdown .submenu {
+  position: absolute; top: 100%; left: 0;
+  background: #fff; border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(13,59,102,.12);
+  padding: 6px; display: none; z-index: 10; min-width: 180px;
+}
+.dropdown.open .submenu { display: block; }
+
 </style>
 </head>
 <body>
@@ -103,7 +115,8 @@ tr.qualify td{
 <main class="container">
   <div class="tabs">
 
-    <!-- 🔹 MŁODZIK -->
+  <!-- 🔹 Wiersz 1: MŁODZIK -->
+  <div class="tabs-row">
     <button class="tab-btn active" data-view="m_roz1">Młodzik – Rozstaw I</button>
     <button class="tab-btn" data-view="m_roz2">Młodzik – Rozstaw II</button>
 
@@ -120,9 +133,10 @@ tr.qualify td{
 
     <button class="tab-btn" data-view="m_overall">Młodzik – Ranking ogólny</button>
     <button class="tab-btn" data-view="m_final">Młodzik – Finał</button>
+  </div>
 
-
-    <!-- 🔹 MŁODZICZKA -->
+  <!-- 🔹 Wiersz 2: MŁODZICZKA -->
+  <div class="tabs-row">
     <button class="tab-btn" data-view="f_roz1">Młodziczka – Rozstaw I</button>
     <button class="tab-btn" data-view="f_roz2">Młodziczka – Rozstaw II</button>
 
@@ -139,8 +153,10 @@ tr.qualify td{
 
     <button class="tab-btn" data-view="f_overall">Młodziczka – Ranking ogólny</button>
     <button class="tab-btn" data-view="f_final">Młodziczka – Finał</button>
-
   </div>
+
+</div>
+
 </main>
 
    
