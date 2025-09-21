@@ -381,19 +381,15 @@ function viewRozstaw(label, rows){
   const root=document.createElement('div');
   const order=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
 
-  Object.keys(groups).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(g=>{
-    ['A','B','O MIEJSCA I-IV','O MIEJSCA V-VII'].forEach(sub=>{
-      const pack = groups[g][sub];
-      if (!pack || pack.length===0) return;
-
-      const grid=document.createElement('div'); grid.className='grid';
-      const niceSub = (sub==='A'||sub==='B') ? `Podgrupa ${sub}` : sub;  // ładniejszy napis
-      const term = renderTermRozstaw(`${label} – Rozstaw ${g} – ${niceSub}`, pack);
-      const rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – ${niceSub}`, computeTable(pack));
-
-      grid.appendChild(term); 
-      grid.appendChild(rank); 
-      root.appendChild(grid);
+ Object.keys(groups).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(g=>{
+  const subs = Object.keys(groups[g]); // tylko istniejące podgrupy
+  subs.forEach(sub=>{
+    const pack = groups[g][sub];
+    if (!pack || pack.length===0) return;
+    const grid=document.createElement('div'); grid.className='grid';
+    const term = renderTermRozstaw(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
+    const rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – Podgrupa ${sub}`, computeTable(pack));
+    grid.appendChild(term); grid.appendChild(rank); root.appendChild(grid);
     });
   });
 
