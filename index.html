@@ -427,35 +427,37 @@ function viewRozstaw(label, rows){
   const groups = groupByRozstaw(rows);
   const root=document.createElement('div');
   const order=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
- Object.keys(groups).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(g=>{
-  Object.keys(groups[g]).forEach(sub=>{
-    const pack = groups[g][sub];
-    if (!pack || pack.length===0) return;
 
-    const grid = document.createElement('div');
-    grid.className = 'grid';
+  Object.keys(groups).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(g=>{
+    const subs = Object.keys(groups[g]); // tylko istniejące podgrupy
+    subs.forEach(sub=>{
+      const pack = groups[g][sub];
+      if (!pack || pack.length===0) return;
 
-    // ładny tytuł: dla A/B piszemy "Podgrupa", dla pozostałych zostawiamy etykietę
-    const subTitle = (sub==='A' || sub==='B')
-      ? `Podgrupa ${sub}`
-      : sub; // np. "I-IV", "V-VII"
+      // 🔽 tu zmiana: jeśli to specjalne podgrupy, dodaj prefix
+      let subLabel = sub;
+      if (sub === 'I-IV' || sub === 'V-VII') {
+        subLabel = 'O miejsca ' + sub;
+      } else {
+        subLabel = 'Podgrupa ' + sub;
+      }
 
-    const title = `${label} – Rozstaw ${g} – ${subTitle}`;
-
-    const term = renderTermRozstaw(title, pack);
-    const rank = renderRanking(`Ranking – ${title}`, computeTable(pack));
-
-    grid.appendChild(term);
-    grid.appendChild(rank);
-    root.appendChild(grid);
+      const grid=document.createElement('div'); 
+      grid.className='grid';
+      const term = renderTermRozstaw(`${label} – Rozstaw ${g} – ${subLabel}`, pack);
+      const rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – ${subLabel}`, computeTable(pack));
+      grid.appendChild(term); 
+      grid.appendChild(rank); 
+      root.appendChild(grid);
+    });
   });
-});
 
-  if (!root.children.length){
-    root.appendChild(makeCard(`${label} – Rozstaw`, document.createTextNode('Brak danych')));
+  if (!root.children.length){ 
+    root.appendChild(makeCard(`${label} – Rozstaw`, document.createTextNode('Brak danych'))); 
   }
   return root;
 }
+
 
 function viewLigaM(rows){
   const byLiga = groupByLiga(rows, 5); // kolumna „Liga”
