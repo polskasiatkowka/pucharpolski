@@ -280,15 +280,45 @@ function normRoman(g){
   }
   return s;
 }
+function normalizeSub(x){
+  // normalizuj: spacje, wielkość, kreski
+  let s = (x || '').toString().trim().toUpperCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[–—−]/g, '-'); // en/em/minus -> zwykły '-'
+
+  // wywal prefixy typu "O MIEJSCA", "MIEJSCA"
+  s = s.replace(/^O\s*MIEJSCA\s*/, '').replace(/^MIEJSCA\s*/, '');
+
+  // prosty maping cyfr → rzymskie i odwrotnie dla najczęstszych zakresów
+  const map = {
+    '1-4': 'I-IV',
+    '1–4': 'I-IV',
+    'I-4': 'I-IV',
+    'I-IV': 'I-IV',
+
+    '5-7': 'V-VII',
+    '5–7': 'V-VII',
+    'V-7': 'V-VII',
+    'V-VII': 'V-VII',
+  };
+
+  // klasyczne A/B zostawiamy
+  if (s === 'A' || s === 'B') return s;
+
+  return map[s] || s; // jeśli nie znamy – pokazuj jak jest po normalizacji kresek
+}
+
 function groupByRozstaw(rows){
-  // -> {'I':{A:[...],B:[...]}, 'II':{A:[...],B:[...]}, ...}
-  const out={};
+  // -> { 'I': { 'A': [...], 'B': [...], 'I-IV': [...], 'V-VII': [...] }, ... }
+  const out = {};
   rows.forEach(r=>{
-    const g = normRoman(r[5]||''); // kolumna "Grupa"
-    const sub = (r[6]||'').toString().trim().toUpperCase(); // kolumna "Podgrupa"
-    if(!g||!sub) return;
-    out[g] ||= {A:[],B:[]};
-    if(sub==='A'||sub==='B') out[g][sub].push(r);
+    const g = normRoman(r[5] || '');      // kol. 6: Grupa (I/II/III…)
+    const rawSub = r[6] || '';            // kol. 7: Podgrupa (A/B/O miejsca…)
+    const sub = normalizeSub(rawSub);
+
+    if (!g || !sub) return;
+    (out[g] ||= {});
+    (out[g][sub] ||= []).push(r);
   });
   return out;
 }
@@ -397,16 +427,30 @@ function viewRozstaw(label, rows){
   const groups = groupByRozstaw(rows);
   const root=document.createElement('div');
   const order=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
-  Object.keys(groups).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(g=>{
-    ['A','B'].forEach(sub=>{
-      const pack = groups[g][sub];
-      if (!pack || pack.length===0) return;
-      const grid=document.createElement('div'); grid.className='grid';
-      const term = renderTermRozstaw(`${label} – Grupa ${g} – Podgrupa ${sub}`, pack);
-      const rank = renderRanking(`Ranking – ${label} – Grupa ${g} – Podgrupa ${sub}`, computeTable(pack));
-      grid.appendChild(term); grid.appendChild(rank); root.appendChild(grid);
-    });
+ Object.keys(groups).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(g=>{
+  Object.keys(groups[g]).forEach(sub=>{
+    const pack = groups[g][sub];
+    if (!pack || pack.length===0) return;
+
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+
+    // ładny tytuł: dla A/B piszemy "Podgrupa", dla pozostałych zostawiamy etykietę
+    const subTitle = (sub==='A' || sub==='B')
+      ? `Podgrupa ${sub}`
+      : sub; // np. "I-IV", "V-VII"
+
+    const title = `${label} – Rozstaw ${g} – ${subTitle}`;
+
+    const term = renderTermRozstaw(title, pack);
+    const rank = renderRanking(`Ranking – ${title}`, computeTable(pack));
+
+    grid.appendChild(term);
+    grid.appendChild(rank);
+    root.appendChild(grid);
   });
+});
+
   if (!root.children.length){
     root.appendChild(makeCard(`${label} – Rozstaw`, document.createTextNode('Brak danych')));
   }
