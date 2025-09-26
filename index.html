@@ -444,8 +444,8 @@ function viewRozstaw(label, rows){
 
       const grid=document.createElement('div'); 
       grid.className='grid';
-      const term = renderTermRozstaw(`${label} – Rozstaw ${g} – ${subLabel}`, pack);
-      const rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – ${subLabel}`, computeTable(pack));
+      const term = renderTermRozstaw(`${label} – Grupa ${g} – Podgrupa ${sub}`, pack);
+      const rank = renderRanking(`Ranking – ${label} – Grupa ${g} – Podgrupa ${sub}`, computeTable(pack));
       grid.appendChild(term); 
       grid.appendChild(rank); 
       root.appendChild(grid);
