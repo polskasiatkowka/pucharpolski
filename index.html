@@ -422,35 +422,126 @@ function renderRanking(title, tableRows, opts = {}){
   }
   return makeCard(title, makeTableEl(headers, rows));
 }
+/* ======== CUSTOM RANKINGI – MŁODZICZKA ======== */
+
+/** Sprawdza czy wiersz ma rozstrzygnięty wynik i zwraca {winner, loser} */
+function winnerLoserFromRow(row){
+  // row: [date, home, away, wynik, sety, ...]
+  const home = (row[1]||'').toString().trim();
+  const away = (row[2]||'').toString().trim();
+  const setsStr = (row[4]||'').toString().trim();
+
+  // parsujemy sety jak zwykle
+  const {hSets, aSets} = parseSets(setsStr);
+  if ((hSets + aSets) === 0) return null; // brak wyniku
+
+  if (hSets > aSets) return { winner: home, loser: away };
+  if (aSets > hSets) return { winner: away, loser: home };
+  return null; // remis nie występuje, ale na wszelki wypadek
+}
+
+/** Zwraca tylko wiersze danej podgrupy, posortowane chronologicznie i z wynikiem */
+function playedRowsSorted(rows){
+  const withScore = rows.filter(r => hasScoreOrSets(r[3], r[4]));
+  return withScore.sort((a,b)=> (parseDateAny(a[0])?.getTime()||0) - (parseDateAny(b[0])?.getTime()||0));
+}
+
+/** Renderer „tylko kolejność” dla 1–4 na podstawie dwóch meczów decydujących.
+ *  Domyślnie bierze 3-ci i 4-ty rozegrany mecz w podgrupie (indeksy 2 i 3).
+ *  Jeśli brakuje danych, robi ostrożny fallback.
+ */
+function renderRankingCustomTop4(title, subgroupRows, decisiveIdxA = 2, decisiveIdxB = 3){
+  const played = playedRowsSorted(subgroupRows);
+
+  // domyślnie: mecz nr 3 decyduje o 1–2, mecz nr 4 decyduje o 3–4
+  const m12 = played[decisiveIdxA] ? winnerLoserFromRow(played[decisiveIdxA]) : null;
+  const m34 = played[decisiveIdxB] ? winnerLoserFromRow(played[decisiveIdxB]) : null;
+
+  let order = [];
+  if (m12 && m34){
+    order = [m12.winner, m12.loser, m34.winner, m34.loser];
+  } else if (m12){
+    // mamy tylko finał: 1–2 z finału, a o 3–4 fallback z computeTable
+    const rest = computeTable(subgroupRows).map(x=>x.team).filter(t => t!==m12.winner && t!==m12.loser);
+    order = [m12.winner, m12.loser, rest[0]||'', rest[1]||''];
+  } else {
+    // brak decydujących meczów → fallback: zwykła tabela, ale pokaż tylko 1–4
+    order = computeTable(subgroupRows).slice(0,4).map(x=>x.team);
+  }
+
+  const headers = ['Miejsce','Drużyna'];
+  const rows = order.map((team, idx)=> [idx+1, team||'—']);
+  return makeCard(title, makeTableEl(headers, rows));
+}
+
+/** Renderer 5–7: normalne liczenie, ale podpisy miejsc jako 5/6/7 */
+function renderRankingVtoVII(title, subgroupRows){
+  // weź kolejność z computeTable, 3 drużyny
+  const order = computeTable(subgroupRows).map(x=>x.team);
+  const headers = ['Miejsce','Drużyna'];
+  const rows = order.slice(0,3).map((team, idx)=> [5+idx, team||'—']); // 5,6,7
+  return makeCard(title, makeTableEl(headers, rows));
+}
+
+/** Normalizuje etykietę podgrupy do jednego z: 'A','B','I-IV','V-VII', … */
+function normalizeSubLabel(x){
+  const s = (x||'').toString().trim().toUpperCase()
+    .replace(/\s+/g,'')          // usuń spacje
+    .replace('OMIEJSCA','')      // „O MIEJSCA …”
+    .replace('O-MIEJSCA','')
+    .replace('O_MIEJSCA','');
+
+  if (s === 'A' || s === 'B') return s;
+  if (s === 'I-IV' || s === 'I–IV' || s === 'I-IV' || s === 'I-IV') return 'I-IV';
+  if (s === 'V-VII' || s === 'V–VII' || s === 'V-VII') return 'V-VII';
+
+  // różne warianty zapisu
+  if (s === 'IIV' || s === '1-4' || s === '1–4') return 'I-IV';
+  if (s === 'VVII' || s === '5-7' || s === '5–7') return 'V-VII';
+
+  return s; // nieznane → zostaw jak jest
+}
 
 function viewRozstaw(label, rows){
   const groups = groupByRozstaw(rows);
   const root=document.createElement('div');
   const order=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
+Object.keys(groups).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(g=>{
+  // suby rzeczywiste (A/B/I-IV/V-VII itd.)
+  Object.keys(groups[g]).forEach(sub=>{
+    const pack = groups[g][sub];
+    if (!pack || pack.length===0) return;
 
-  Object.keys(groups).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(g=>{
-    const subs = Object.keys(groups[g]); // tylko istniejące podgrupy
-    subs.forEach(sub=>{
-      const pack = groups[g][sub];
-      if (!pack || pack.length===0) return;
+    const grid=document.createElement('div'); grid.className='grid';
+    const term = renderTermRozstaw(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
 
-      // 🔽 tu zmiana: jeśli to specjalne podgrupy, dodaj prefix
-      let subLabel = sub;
-      if (sub === 'I-IV' || sub === 'V-VII') {
-        subLabel = 'O miejsca ' + sub;
-      } else {
-        subLabel = 'Podgrupa ' + sub;
-      }
+    // >>>>>> NOWE: wybór specjalnego renderera dla MŁODZICZEK
+    let rankCard;
+    const normSub = normalizeSubLabel(sub);
+    if (label === 'Młodziczka' && normSub === 'A'){
+      // Podgrupa A – „finały” decydują o 1–4 (3. i 4. rozegrany mecz)
+      rankCard = renderRankingCustomTop4(`Kolejność końcowa – ${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack, 2, 3);
+    } else if (label === 'Młodziczka' && normSub === 'I-IV'){
+      // „o miejsca I–IV” – analogicznie: ostatnie 2 mecze decydują
+      // (często są to 3. i 4., ale bywa, że czasowo wyjdą 2 ostatnie)
+      const played = playedRowsSorted(pack);
+      const idxA = Math.max(0, played.length - 2);
+      const idxB = Math.max(0, played.length - 1);
+      rankCard = renderRankingCustomTop4(`Kolejność końcowa – ${label} – Rozstaw ${g} – o miejsca I–IV`, pack, idxA, idxB);
+    } else if (label === 'Młodziczka' && normSub === 'V-VII'){
+      // „o miejsca V–VII” – zwykłe liczenie, ale etykiety 5/6/7
+      rankCard = renderRankingVtoVII(`${label} – Rozstaw ${g} – o miejsca V–VII`, pack);
+    } else {
+      // standardowy ranking jak dotąd
+      rankCard = renderRanking(`Ranking – ${label} – Rozstaw ${g} – Podgrupa ${sub}`, computeTable(pack));
+    }
+    // <<<<<< /NOWE
 
-      const grid=document.createElement('div'); 
-      grid.className='grid';
-      const term = renderTermRozstaw(`${label} – Grupa ${g} – Podgrupa ${sub}`, pack);
-      const rank = renderRanking(`Ranking – ${label} – Grupa ${g} – Podgrupa ${sub}`, computeTable(pack));
-      grid.appendChild(term); 
-      grid.appendChild(rank); 
-      root.appendChild(grid);
-    });
+    grid.appendChild(term);
+    grid.appendChild(rankCard);
+    root.appendChild(grid);
   });
+});
 
   if (!root.children.length){ 
     root.appendChild(makeCard(`${label} – Rozstaw`, document.createTextNode('Brak danych'))); 
