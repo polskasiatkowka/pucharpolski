@@ -533,60 +533,23 @@ function normalizeSubLabel(x){
   return s; // nieznane → zostaw jak jest
 }
 
-function viewRozstaw(label, data) {
-  const root = document.createElement('div');
-  root.className = 'rozstaw-root';
+function viewRozstaw(label, rows){
+  const groups = groupByRozstaw(rows);
+  const root=document.createElement('div');
+  const order=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
 
-  if (!data || data.length === 0) {
-    root.innerHTML = `<p>Brak danych dla ${label}</p>`;
-    return root;
-  }
-
-  // Grupowanie danych
-  const groups = {};
-  data.forEach(row => {
-    const [liga, podgrupa, ...rest] = row;
-    if (!groups[liga]) groups[liga] = {};
-    if (!groups[liga][podgrupa]) groups[liga][podgrupa] = [];
-    groups[liga][podgrupa].push(row);
-  });
-
-  // Kolejność grup
-  const order = ['I', 'II', 'III', 'IV', 'I-IV', 'V-VII'];
-
-  // Renderowanie
   Object.keys(groups)
-    .sort((a, b) => order.indexOf(a) - order.indexOf(b))
-    .forEach(g => {
-      const subs = Object.keys(groups[g]); // np. A, B, itp.
-      subs.forEach(sub => {
+    .sort((a,b)=>order.indexOf(a)-order.indexOf(b))
+    .forEach(g=>{
+      Object.keys(groups[g]).forEach(sub=>{
         const pack = groups[g][sub];
-        if (!pack || pack.length === 0) return;
+        if (!pack || pack.length===0) return;
 
-        // Specjalne zasady dla grup „o miejsca”
-        const isPlacesGroup = g === 'I-IV' || g === 'V-VII';
+        const grid=document.createElement('div'); 
+        grid.className='grid';
 
-        const grid = document.createElement('div');
-        grid.className = 'grid';
-
-        const titleText = isPlacesGroup
-          ? `${label} – o miejsca ${g} – Podgrupa ${sub}`
-          : `${label} – Rozstaw ${g} – Podgrupa ${sub}`;
-
-        // Tabela meczów (zawsze pokazujemy)
-        const term = renderTermRozstaw(titleText, pack);
-
-        // Jeśli to nie "o miejsca", pokazujemy pełną tabelę z ratio
-        // Dla o miejsca zostaje specjalna klasyfikacja (wg wcześniejszych zasad)
-        const rank = isPlacesGroup
-          ? renderRankingPlaces(
-              `Ranking – ${label} – ${titleText}`,
-              computePlacesRanking(pack, g)
-            )
-          : renderRanking(
-              `Ranking – ${label} – ${titleText}`,
-              computeTableWithRatio(pack)
-            );
+        const term = renderTermRozstaw(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
+        const rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – Podgrupa ${sub}`, computeTable(pack));
 
         grid.appendChild(term);
         grid.appendChild(rank);
@@ -594,87 +557,12 @@ function viewRozstaw(label, data) {
       });
     });
 
+  if (!root.children.length){ 
+    root.appendChild(makeCard(`${label} – Rozstaw`, document.createTextNode('Brak danych'))); 
+  }
   return root;
 }
 
-// =============================
-// 🧮 Obliczanie pełnej tabeli z ratio
-// =============================
-function computeTableWithRatio(rows) {
-  const teams = {};
-  rows.forEach(r => {
-    const home = r[2], away = r[3];
-    const setHome = +r[4], setAway = +r[5];
-    const pointsHome = +r[6], pointsAway = +r[7];
-
-    if (!teams[home]) teams[home] = { team: home, setsWon: 0, setsLost: 0, pointsWon: 0, pointsLost: 0, matches: 0 };
-    if (!teams[away]) teams[away] = { team: away, setsWon: 0, setsLost: 0, pointsWon: 0, pointsLost: 0, matches: 0 };
-
-    teams[home].setsWon += setHome;
-    teams[home].setsLost += setAway;
-    teams[home].pointsWon += pointsHome;
-    teams[home].pointsLost += pointsAway;
-    teams[home].matches++;
-
-    teams[away].setsWon += setAway;
-    teams[away].setsLost += setHome;
-    teams[away].pointsWon += pointsAway;
-    teams[away].pointsLost += pointsHome;
-    teams[away].matches++;
-  });
-
-  const result = Object.values(teams).map(t => ({
-    Drużyna: t.team,
-    Mecze: t.matches,
-    Sety: `${t.setsWon}:${t.setsLost}`,
-    'Ratio setów': (t.setsLost ? (t.setsWon / t.setsLost).toFixed(3) : t.setsWon.toFixed(3)),
-    Punkty: `${t.pointsWon}:${t.pointsLost}`,
-    'Ratio pkt': (t.pointsLost ? (t.pointsWon / t.pointsLost).toFixed(3) : t.pointsWon.toFixed(3))
-  }));
-
-  return result;
-}
-
-// =============================
-// 🏆 Klasyfikacja „o miejsca” (I–IV, V–VII)
-// =============================
-function computePlacesRanking(rows, groupName) {
-  const base = computeTableWithRatio(rows);
-  let order = [];
-
-  if (groupName === 'I-IV') {
-    // 1. miejsce – zwycięzca meczu nr 3
-    // 2. miejsce – przegrany meczu nr 3
-    // 3. miejsce – zwycięzca meczu nr 1
-    // 4. miejsce – przegrany meczu nr 1
-    const m1 = rows[0], m3 = rows[2];
-    if (m3 && m1) {
-      order = [
-        m3[setWinnerIndex(m3)],
-        m3[setLoserIndex(m3)],
-        m1[setWinnerIndex(m1)],
-        m1[setLoserIndex(m1)]
-      ];
-    }
-  } else if (groupName === 'V-VII') {
-    // 5, 6, 7 miejsca — pozycje nazwane
-    order = base.map(r => r.Drużyna);
-  }
-
-  // Tworzymy wynik z nazwami miejsc
-  return order.map((team, i) => ({
-    Miejsce: groupName === 'V-VII' ? `${i + 5}. miejsce` : `${i + 1}. miejsce`,
-    Drużyna: team || ''
-  }));
-}
-
-// Pomocnicze funkcje do określenia zwycięzcy meczu
-function setWinnerIndex(row) {
-  return +row[4] > +row[5] ? 2 : 3;
-}
-function setLoserIndex(row) {
-  return +row[4] > +row[5] ? 3 : 2;
-}
 
 
 
