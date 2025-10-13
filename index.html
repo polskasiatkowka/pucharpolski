@@ -392,36 +392,67 @@ function renderTermFinal(title, rows){
 const BONUS_BY_KIND = { mlodzik:16, mlodziczka:42 };
 function classificationBonus(place, maxBonus){ const v = maxBonus - (place - 1); return v>=1 ? v : 1; }
 
-// ========= Ranking (z/bez bonusów) =========
-function renderRanking(title, tableRows, opts = {}){
+// ===== RANKING (z/bez bonusów, z ratio małych punktów) =====
+// renderRanking(title, tableRows, opts?)
+//   opts = { final: true/false, kind: 'mlodzik'|'mlodziczka', maxBonus?: number }
+function renderRanking(title, tableRows, opts = {}) {
   const isFinal  = !!opts.final;
-  const maxBonus = Number(opts.maxBonus ?? BONUS_BY_KIND[opts.kind] ?? 0);
+  const maxBonus = Number(
+    opts.maxBonus ?? BONUS_BY_KIND[opts.kind] ?? 0
+  );
 
   let headers, rows;
-  if (!isFinal){
-    headers = ['Miejsce','Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty'];
-    rows = tableRows.map((t,idx)=>[
-      idx+1, t.team, t.matches, t.wins, t.losses,
-      `${t.setsFor}:${t.setsAgainst}`,
-      `${t.smallFor}:${t.smallAgainst} (${t.smallFor - t.smallAgainst >=0?'+':''}${t.smallFor - t.smallAgainst})`,
-      t.points
-    ]);
+  if (!isFinal) {
+    headers = [
+      'Miejsce','Drużyna','M','W','P',
+      'Sety (+/−)','Małe punkty (ratio)','Punkty'
+    ];
+    rows = tableRows.map((t, idx) => {
+      const ratio = t.smallAgainst > 0
+        ? (t.smallFor / t.smallAgainst).toFixed(3)
+        : '∞';
+      return [
+        idx + 1,
+        t.team,
+        t.matches,
+        t.wins,
+        t.losses,
+        `${t.setsFor}:${t.setsAgainst}`,
+        `${t.smallFor}:${t.smallAgainst} (ratio ${ratio})`,
+        t.points
+      ];
+    });
   } else {
-    headers = ['Miejsce','Drużyna','M','W','P','Sety (+/−)','Małe (+/−)','Punkty meczowe','Klasyfikacyjne','Razem'];
-    rows = tableRows.map((t,idx)=>{
-      const place = idx+1;
+    headers = [
+      'Miejsce','Drużyna','M','W','P',
+      'Sety (+/−)','Małe punkty (ratio)',
+      'Punkty meczowe','Klasyfikacyjne','Razem'
+    ];
+    rows = tableRows.map((t, idx) => {
+      const ratio = t.smallAgainst > 0
+        ? (t.smallFor / t.smallAgainst).toFixed(3)
+        : '∞';
+      const place = idx + 1;
       const bonus = classificationBonus(place, maxBonus);
       const total = t.points + bonus;
       return [
-        place, t.team, t.matches, t.wins, t.losses,
+        place,
+        t.team,
+        t.matches,
+        t.wins,
+        t.losses,
         `${t.setsFor}:${t.setsAgainst}`,
-        `${t.smallFor}:${t.smallAgainst} (${t.smallFor - t.smallAgainst >=0?'+':''}${t.smallFor - t.smallAgainst})`,
-        t.points, bonus, total
+        `${t.smallFor}:${t.smallAgainst} (ratio ${ratio})`,
+        t.points,
+        bonus,
+        total
       ];
     });
   }
+
   return makeCard(title, makeTableEl(headers, rows));
 }
+
 /* ======== CUSTOM RANKINGI – MŁODZICZKA ======== */
 
 /** Sprawdza czy wiersz ma rozstrzygnięty wynik i zwraca {winner, loser} */
