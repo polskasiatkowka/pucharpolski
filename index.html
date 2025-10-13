@@ -548,18 +548,22 @@ function viewRozstaw(label, rows){
         const grid = document.createElement('div'); 
         grid.className = 'grid';
 
-        // Tabela terminarzy
+        // Terminarz
         const term = renderTermRozstaw(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
 
-        // Ranking: top4 / 5-7 / standard
-        let rank;
+        // Ranking z pełnymi statystykami
+        const tableData = computeTable(pack);
         const subNorm = normalizeSubLabel(sub);
-        if (subNorm === 'I-IV') {
-          rank = renderRankingCustomTop4(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
-        } else if (subNorm === 'V-VII') {
-          rank = renderRankingVtoVII(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
-        } else {
-          rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – Podgrupa ${sub}`, computeTable(pack));
+        const rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – Podgrupa ${sub}`, tableData);
+
+        // Podświetlenie najlepszych miejsc
+        let topCount = 0;
+        if(subNorm === 'I-IV') topCount = 4;
+        else if(subNorm === 'V-VII') topCount = 3;
+
+        if(topCount > 0){
+          const trs = rank.querySelectorAll('tbody tr');
+          trs.forEach((tr, idx)=>{ if(idx < topCount) tr.classList.add('qualify'); });
         }
 
         grid.appendChild(term);
