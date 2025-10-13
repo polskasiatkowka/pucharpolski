@@ -533,70 +533,46 @@ function normalizeSubLabel(x){
   return s; // nieznane → zostaw jak jest
 }
 
-function viewRozstaw(label, rows) {
+function viewRozstaw(label, rows){
   const groups = groupByRozstaw(rows);
   const root = document.createElement('div');
-  const order = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+  const order = ['', 'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
 
   Object.keys(groups)
-    .sort((a, b) => order.indexOf(a) - order.indexOf(b))
-    .forEach((g) => {
-      Object.keys(groups[g]).forEach((sub) => {
+    .sort((a,b)=> order.indexOf(a) - order.indexOf(b))
+    .forEach(g => {
+      Object.keys(groups[g]).forEach(sub => {
         const pack = groups[g][sub];
         if (!pack || pack.length === 0) return;
 
-        const grid = document.createElement('div');
+        const grid = document.createElement('div'); 
         grid.className = 'grid';
+
+        // Tabela terminarzy
         const term = renderTermRozstaw(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
 
-        let rankCard;
-        const normSub = normalizeSubLabel(sub);
-
-        if (label === 'Młodziczka' && normSub === 'A') {
-          // ---- PODGRUPA A – finałowy układ 1–4 wg meczu 3 i 4 ----
-          const ranked = computeCustomTop4(pack, 2, 3);
-          rankCard = renderRankingCustom(
-            `Kolejność końcowa – ${label} – Rozstaw ${g} – Podgrupa ${sub}`,
-            ranked
-          );
-        } else if (label === 'Młodziczka' && normSub === 'I-IV') {
-          // ---- O miejsca I–IV – ostatnie dwa mecze ----
-          const played = playedRowsSorted(pack);
-          const idxA = Math.max(0, played.length - 2);
-          const idxB = Math.max(0, played.length - 1);
-          const ranked = computeCustomTop4(pack, idxA, idxB);
-          rankCard = renderRankingCustom(
-            `Kolejność końcowa – ${label} – Rozstaw ${g} – o miejsca I–IV`,
-            ranked
-          );
-        } else if (label === 'Młodziczka' && normSub === 'V-VII') {
-          // ---- O miejsca V–VII – etykiety 5–7 ----
-          const ranked = computeTable(pack);
-          ranked.forEach((r, i) => (r[0] = `${i + 5} miejsce`));
-          rankCard = renderRankingCustom(
-            `${label} – Rozstaw ${g} – o miejsca V–VII`,
-            ranked
-          );
+        // Ranking: top4 / 5-7 / standard
+        let rank;
+        const subNorm = normalizeSubLabel(sub);
+        if (subNorm === 'I-IV') {
+          rank = renderRankingCustomTop4(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
+        } else if (subNorm === 'V-VII') {
+          rank = renderRankingVtoVII(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
         } else {
-          // ---- standardowy ranking ----
-          rankCard = renderRanking(
-            `Ranking – ${label} – Rozstaw ${g} – Podgrupa ${sub}`,
-            computeTable(pack)
-          );
+          rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – Podgrupa ${sub}`, computeTable(pack));
         }
 
         grid.appendChild(term);
-        grid.appendChild(rankCard);
+        grid.appendChild(rank);
         root.appendChild(grid);
       });
     });
 
-  if (!root.children.length) {
-    root.appendChild(
-      makeCard(`${label} – Rozstaw`, document.createTextNode('Brak danych'))
-    );
+  if (!root.children.length) { 
+    root.appendChild(makeCard(`${label} – Rozstaw`, document.createTextNode('Brak danych'))); 
   }
   return root;
+}
 }
 function normalizeSubLabel(sub) {
   return sub.replace(/\s+/g, '').toUpperCase();
