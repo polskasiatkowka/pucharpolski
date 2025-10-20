@@ -578,12 +578,12 @@ function viewRozstaw(label, rows){
         grid.className = 'grid';
 
         // Terminarz
-        const term = renderTermRozstaw(`${label} – Rozstaw ${g} – Podgrupa ${sub}`, pack);
+        const term = renderTermRozstaw(`${label} – Grupa ${g} – Podgrupa ${sub}`, pack);
 
         // Ranking z pełnymi statystykami
         const tableData = computeTable(pack);
         const subNorm = normalizeSubLabel(sub);
-        const rank = renderRanking(`Ranking – ${label} – Rozstaw ${g} – Podgrupa ${sub}`, tableData);
+        const rank = renderRanking(`Ranking – ${label} – Grupa ${g} – Podgrupa ${sub}`, tableData);
 
         // Podświetlenie najlepszych miejsc
         let topCount = 0;
