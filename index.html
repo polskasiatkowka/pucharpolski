@@ -175,7 +175,7 @@ tr.qualify td{
 <script>
 // ========= KONFIG =========
 // jeśli masz CORS ok na Apps Script, możesz użyć bezpośrednio WEB_APP_URL_BASE + "?action=get"
-const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbwQIeZ1DZiY9EtU7-ClaUXOqKa0LR5hruYmVoIo30RfY7DnI9y4iYd2uOFXVu2qZYzq/exec";
+const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbxmPZoZIXqF6dNIDUM2DJ9J4iJaULfrHxhoMdVVWv9hDhMokCXTBI44IcYLkjsX/exec";
 const WEB_APP_URL = "https://corsproxy.io/?" + encodeURIComponent(WEB_APP_URL_BASE + "?action=get&cb=" + Date.now());
 
 // ========= Utils =========
@@ -332,7 +332,36 @@ function groupByRozstaw(rows){
   return out;
 }
 
+function renderRozstawManualF(rows) {
+  const groups = { '1-4': [], '5-7': [] };
 
+  rows.forEach(r => {
+    const g = r.grupa.replace(/\s+/g,''); // normalizacja
+    if (g === '1-4') groups['1-4'].push(r);
+    else if (g === '5-7') groups['5-7'].push(r);
+  });
+
+  const root = document.createElement('div');
+  const headers = ['Miejsce','Drużyna','Punkty'];
+
+  // Grupa 1-4
+  if (groups['1-4'].length > 0) {
+    const body = groups['1-4']
+      .sort((a,b)=>a.miejsce-b.miejsce)
+      .map(r=>[r.miejsce, r.druzyna, r.punkty]);
+    root.appendChild(makeCard('Młodziczka – Rozstaw II – Grupa 1-4', makeTableEl(headers, body)));
+  }
+
+  // Grupa 5-7
+  if (groups['5-7'].length > 0) {
+    const body = groups['5-7']
+      .sort((a,b)=>a.miejsce-b.miejsce)
+      .map(r=>[r.miejsce, r.druzyna, r.punkty]);
+    root.appendChild(makeCard('Młodziczka – Rozstaw II – Grupa 5-7', makeTableEl(headers, body)));
+  }
+
+  return root;
+}
 
 // ========= Renderery terminarzy =========
 function renderTermRozstaw(title, rows){
@@ -605,7 +634,6 @@ function computeCustomTop4(pack, idxA, idxB) {
 
 
 
-
 function viewLigaM(rows){
   const byLiga = groupByLiga(rows, 5); // kolumna „Liga”
   const root=document.createElement('div');
@@ -739,12 +767,27 @@ function renderView(kind){
   else if (kind==='m_roz2')     mount.appendChild( viewRozstaw('Młodzik',     DATA.m_rozstaw_ii || [], ['II']) );
   else if (kind==='m_final')    mount.appendChild( renderFinalView(           DATA.m_final      || [], 'Młodzik') );
   else if (kind==='f_roz1')     mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_i  || [], ['I']) );
-  else if (kind==='f_roz2')     mount.appendChild( viewRozstaw('Młodziczka',  DATA.f_rozstaw_ii || [], ['II']) );
   else if (kind==='f_final')    mount.appendChild( renderFinalView(           DATA.f_final      || [], 'Młodziczka') );
   else if (kind === 'm_liga')   mount.appendChild( viewLigaM( getLigaRows('m', CURRENT_M_ROUND) ) );
   else if (kind === 'f_liga')   mount.appendChild( viewLigaF( getLigaRows('f', CURRENT_F_ROUND) ) );
   else if (kind === 'm_overall')mount.appendChild( viewOverallManual('Młodzik',     DATA.m_overall || []) );
   else if (kind === 'f_overall')mount.appendChild( viewOverallManual('Młodziczka',  DATA.f_overall || []) );
+  else if(kind==='f_roz2') {
+    // Wyświetl fallback standardowy (opcjonalnie)
+    mount.appendChild(viewRozstaw('Młodziczka', DATA.f_rozstaw_ii || [], ['II']));
+
+    // Pobranie danych manualnych z Apps Script
+    fetch(WEB_APP_URL + '&action=froz_manual&cb=' + Date.now())
+      .then(res => res.json())
+      .then(data => {
+        const manualRows = data || [];
+        mount.appendChild(renderRozstawManualF(manualRows));
+      })
+      .catch(err => {
+        const card = makeCard('Błąd', document.createTextNode('Nie udało się pobrać danych manualnych.\nSzczegóły: '+err));
+        mount.appendChild(card);
+      });
+  }
 }
 
 // ========= Start =========
