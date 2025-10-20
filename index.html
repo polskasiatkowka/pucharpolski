@@ -176,7 +176,7 @@ tr.qualify td{
 // ========= KONFIG =========
 // jeśli masz CORS ok na Apps Script, możesz użyć bezpośrednio WEB_APP_URL_BASE + "?action=get"
 const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbyJpmWQxY57xRQ5hAPK75R_FYAmKO5EASQpOMjkUrTsybOZqtfh8N09vdK4VXUVXoYj/exec";
-const WEB_APP_URL = "https://corsproxy.io/?" + encodeURIComponent(WEB_APP_URL_BASE + "?action=get&cb=" + Date.now());
+const WEB_APP_URL = WEB_APP_URL_BASE + "?action=get&cb=" + Date.now();
 
 // ========= Utils =========
 function isUrl(v){ try{ const u = new URL((v||'').trim()); return /^https?:$/.test(u.protocol); }catch(e){ return false; } }
