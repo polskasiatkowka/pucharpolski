@@ -179,6 +179,62 @@ const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbyJpmWQxY57xRQ
 const WEB_APP_URL = WEB_APP_URL_BASE + "?action=get&cb=" + Date.now();
 
 // ========= Utils =========
+
+function makeManualRankingTable(data) {
+    const wrap = document.createElement('div');
+    wrap.className = 'table-wrap';
+    const table = document.createElement('table');
+
+    const thead = document.createElement('thead');
+    const trh = document.createElement('tr');
+    ["Miejsce", "Drużyna", "Punkty"].forEach(h => {
+        const th = document.createElement('th'); th.textContent = h; trh.appendChild(th);
+    });
+    thead.appendChild(trh);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    data.forEach(r => {
+        const tr = document.createElement('tr');
+        const td1 = document.createElement('td'); td1.textContent = r.miejsce; tr.appendChild(td1);
+        const td2 = document.createElement('td'); td2.textContent = r.druzyna; tr.appendChild(td2);
+        const td3 = document.createElement('td'); td3.textContent = r.punkty; tr.appendChild(td3);
+        tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    return wrap;
+}
+
+// Funkcja wczytująca manualne rankingi i wstawiająca je do strony
+function loadManualRankings() {
+    fetch(WEB_APP_URL_MANUAL)
+        .then(r => r.json())
+        .then(data => {
+            // Filtrujemy tylko podgrupy 1-4 i 5-7 dla Młodziczka Rozstaw 2
+            const filtered = data.filter(r => r.grupa.includes("2") && (r.miejsce.includes("1-4") || r.miejsce.includes("5-7")));
+
+            // Grupa według arkusza
+            const grupy = [...new Set(filtered.map(r => r.grupa))];
+
+            grupy.forEach(gr => {
+                // Tworzymy kontener na ranking
+                const container = document.querySelector(`#ranking_manual_grupa_${gr}`); 
+                if (!container) return;
+
+                const daneGrupy = filtered.filter(r => r.grupa === gr);
+                const tableEl = makeManualRankingTable(daneGrupy);
+                container.innerHTML = ""; // czyścimy
+                container.appendChild(tableEl);
+            });
+        })
+        .catch(err => console.error("Błąd ładowania manualnych rankingów:", err));
+}
+
+// Wywołanie przy starcie
+document.addEventListener("DOMContentLoaded", loadManualRankings);
+  
 function isUrl(v){ try{ const u = new URL((v||'').trim()); return /^https?:$/.test(u.protocol); }catch(e){ return false; } }
 function parseDateAny(v){
   if (v instanceof Date && !isNaN(v)) return v;
@@ -772,22 +828,27 @@ function renderView(kind){
   else if (kind === 'f_liga')   mount.appendChild( viewLigaF( getLigaRows('f', CURRENT_F_ROUND) ) );
   else if (kind === 'm_overall')mount.appendChild( viewOverallManual('Młodzik',     DATA.m_overall || []) );
   else if (kind === 'f_overall')mount.appendChild( viewOverallManual('Młodziczka',  DATA.f_overall || []) );
-  else if(kind==='f_roz2') {
-    // Wyświetl fallback standardowy (opcjonalnie)
-    mount.appendChild(viewRozstaw('Młodziczka', DATA.f_rozstaw_ii || [], ['II']));
+ else if(kind === 'f_roz2') {
+    const mount = document.getElementById('view');
+    mount.innerHTML = ''; // Czyścimy poprzednie widoki
 
-    // Pobranie danych manualnych z Apps Script
+    // Pobieramy dane manualne
     fetch(WEB_APP_URL + '&action=froz_manual&cb=' + Date.now())
       .then(res => res.json())
-      .then(data => {
-        const manualRows = data || [];
-        mount.appendChild(renderRozstawManualF(manualRows));
+      .then(manualRows => {
+        if(manualRows && manualRows.length) {
+          // Renderujemy tabelę manualną dla Młodziczki – Rozstaw II
+          mount.appendChild(renderRozstawManualF(manualRows));
+        } else {
+          mount.appendChild(makeCard('Brak danych', 
+            document.createTextNode('Brak manualnych wpisów dla Młodziczki – Rozstaw II')));
+        }
       })
       .catch(err => {
-        const card = makeCard('Błąd', document.createTextNode('Nie udało się pobrać danych manualnych.\nSzczegóły: '+err));
-        mount.appendChild(card);
+        mount.appendChild(makeCard('Błąd', 
+          document.createTextNode('Nie udało się pobrać danych manualnych.\nSzczegóły: '+err)));
       });
-  }
+}
 }
 
 // ========= Start =========
