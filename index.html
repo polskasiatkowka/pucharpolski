@@ -209,7 +209,7 @@ function makeManualRankingTable(data) {
 
 // Funkcja wczytująca manualne rankingi i wstawiająca je do strony
 function loadManualRankings() {
-    fetch(WEB_APP_URL_MANUAL)
+    fetch(WEB_APP_URL)
         .then(r => r.json())
         .then(data => {
             // Filtrujemy tylko podgrupy 1-4 i 5-7 dla Młodziczka Rozstaw 2
