@@ -250,12 +250,11 @@ function computeTable(rows){
   });
   const arr=Object.values(teams).map(t=>({ ...t, smallDiff:t.smallFor-t.smallAgainst, setRatio: t.setsAgainst===0 ? (t.setsFor>0?Infinity:0) : t.setsFor/t.setsAgainst }));
   arr.sort((a,b)=>{
-    if (b.points!==a.points) return b.points-a.points;
-    if (b.smallDiff!==a.smallDiff) return b.smallDiff-a.smallDiff;
-    if (b.setsFor!==a.setsFor) return b.setsFor-a.setsFor;
-    if (b.setRatio!==a.setRatio) return b.setRatio-a.setRatio;
+    if (b.points !== a.points) return b.points - a.points;           // duże punkty
+    if (b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;   // ratio sety
+    if (b.smallDiff !== a.smallDiff) return b.smallDiff - a.smallDiff; // ratio małe punkty
     return a.team.localeCompare(b.team,'pl');
-  });
+});
   return arr;
 }
 
