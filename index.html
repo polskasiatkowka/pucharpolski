@@ -231,32 +231,85 @@ function matchPointsTwoOne(hSets,aSets){
   if (aSets>hSets) return {home:1,away:2};
   return {home:0,away:0};
 }
-function computeTable(rows){
-  const teams={};
-  const ensure=n=>teams[n]||(teams[n]={team:n,matches:0,wins:0,losses:0,setsFor:0,setsAgainst:0,smallFor:0,smallAgainst:0,points:0});
-  rows.forEach(r=>{
-    const [ , home, away, , setsStr] = r;
-    if (!home || !away) return;
-    const {hSets,aSets,hPts,aPts}=parseSets(setsStr);
-    const {home:hp,away:ap}=matchPointsTwoOne(hSets,aSets);
-    const H=ensure(home), A=ensure(away);
-    if ((hSets+aSets)>0){
-      H.matches++; A.matches++;
-      if (hSets>aSets){ H.wins++; A.losses++; } else if (aSets>hSets){ A.wins++; H.losses++; }
-      H.setsFor+=hSets; H.setsAgainst+=aSets; A.setsFor+=aSets; A.setsAgainst+=hSets;
-      H.smallFor+=hPts; H.smallAgainst+=aPts; A.smallFor+=aPts; A.smallAgainst+=hPts;
-      H.points+=hp; A.points+=ap;
+unction computeTable(rows) {
+  const teams = {};
+
+  rows.forEach(r => {
+    const nr = r[0],
+          t1 = r[1],
+          t2 = r[2],
+          s1 = r[3],
+          s2 = r[4],
+          mp1 = r[5],
+          mp2 = r[6];
+
+    if (!t1 || !t2 || s1 === '' || s2 === '') return;
+
+    if (!teams[t1]) {
+      teams[t1] = {
+        team: t1,
+        big: 0,
+        setWon: 0,
+        setLost: 0,
+        pWon: 0,
+        pLost: 0
+      };
+    }
+
+    if (!teams[t2]) {
+      teams[t2] = {
+        team: t2,
+        big: 0,
+        setWon: 0,
+        setLost: 0,
+        pWon: 0,
+        pLost: 0
+      };
+    }
+
+    // Sety
+    teams[t1].setWon  += Number(s1);
+    teams[t1].setLost += Number(s2);
+    teams[t2].setWon  += Number(s2);
+    teams[t2].setLost += Number(s1);
+
+    // Małe punkty
+    teams[t1].pWon    += Number(mp1);
+    teams[t1].pLost   += Number(mp2);
+    teams[t2].pWon    += Number(mp2);
+    teams[t2].pLost   += Number(mp1);
+
+    // Duże punkty
+    if (Number(s1) > Number(s2)) {
+      teams[t1].big += 2;
+    } else {
+      teams[t2].big += 2;
     }
   });
-  const arr=Object.values(teams).map(t=>({ ...t, smallDiff:t.smallFor-t.smallAgainst, setRatio: t.setsAgainst===0 ? (t.setsFor>0?Infinity:0) : t.setsFor/t.setsAgainst }));
-  arr.sort((a,b)=>{
-    if (b.points!==a.points) return b.points-a.points;
-    if (b.smallDiff!==a.smallDiff) return b.smallDiff-a.smallDiff;
-    if (b.setsFor!==a.setsFor) return b.setsFor-a.setsFor;
-    if (b.setRatio!==a.setRatio) return b.setRatio-a.setRatio;
-    return a.team.localeCompare(b.team,'pl');
+
+  const arr = Object.values(teams);
+
+  // Wyliczenia ratio
+  arr.forEach(t => {
+    t.setRatio   = t.setLost === 0 ? t.setWon : t.setWon / t.setLost;
+    t.pointRatio = t.pLost  === 0 ? t.pWon  : t.pWon  / t.pLost;
   });
-  return arr;
+
+  // Sortowanie
+  arr.sort((a, b) =>
+    b.big - a.big ||
+    b.setRatio - a.setRatio ||
+    b.pointRatio - a.pointRatio
+  );
+
+  // Wynik
+  return arr.map((t, i) => [
+    `${i + 1}`,
+    t.team,
+    t.big,
+    t.setRatio.toFixed(3),
+    t.pointRatio.toFixed(3)
+  ]);
 }
 
 // ========= Status/kolory wierszy =========
