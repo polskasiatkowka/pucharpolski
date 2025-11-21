@@ -232,7 +232,6 @@ function matchPointsTwoOne(hSets,aSets){
   return {home:0,away:0};
 }
   function parseSetyForComputeTable(setsStr) {
-  // przykład: "25-22, 16-25, 15-13"
   const sets = setsStr.split(',').map(s => s.trim());
 
   let hSets = 0, aSets = 0;
@@ -254,54 +253,49 @@ function computeTable(rows) {
   const teams = {};
 
   rows.forEach(r => {
-    const team1 = r[1];     // Gospodarz
-    const team2 = r[2];     // Gość
-    const setsStr = r[4];   // Sety "25-22, 16-25, 15-13"
+    const team1 = r[1]; // Gospodarz
+    const team2 = r[2]; // Gość
+    const setsStr = r[4]; // Sety "25-22,16-25,15-13"
 
     if (!team1 || !team2 || !setsStr) return;
 
-    const { hSets, aSets, hPts, aPts } = parseSetyForComputeTable(setsStr);
+    const sets = setsStr.split(',').map(s => s.trim()).filter(s => s);
+    let hSets = 0, aSets = 0;
 
-    if (!teams[team1]) teams[team1] = { team: team1, big: 0, setWon: 0, setLost: 0, pWon: 0, pLost: 0 };
-    if (!teams[team2]) teams[team2] = { team: team2, big: 0, setWon: 0, setLost: 0, pWon: 0, pLost: 0 };
+    sets.forEach(s => {
+      const [hp, ap] = s.split('-').map(Number);
+      if (!isNaN(hp) && !isNaN(ap)) {
+        if (hp > ap) hSets++;
+        else if (ap > hp) aSets++;
+      }
+    });
 
-    // sety
-    teams[team1].setWon  += hSets;
-    teams[team1].setLost += aSets;
-    teams[team2].setWon  += aSets;
-    teams[team2].setLost += hSets;
+    // Punkty meczowe: zwycięzca 2, przegrany 1
+    const hMatchPts = hSets > aSets ? 2 : 1;
+    const aMatchPts = aSets > hSets ? 2 : 1;
 
-    // małe punkty
-    teams[team1].pWon    += hPts;
-    teams[team1].pLost   += aPts;
-    teams[team2].pWon    += aPts;
-    teams[team2].pLost   += hPts;
+    if (!teams[team1]) teams[team1] = { team: team1, matchPts: 0, setsWon: 0, setsLost: 0, points: 0 };
+    if (!teams[team2]) teams[team2] = { team: team2, matchPts: 0, setsWon: 0, setsLost: 0, points: 0 };
 
-    // duże punkty (2 za zwycięstwo)
-    if (hSets > aSets) teams[team1].big += 2;
-    else teams[team2].big += 2;
+    teams[team1].matchPts += hMatchPts;
+    teams[team2].matchPts += aMatchPts;
+    teams[team1].setsWon += hSets;
+    teams[team1].setsLost += aSets;
+    teams[team2].setsWon += aSets;
+    teams[team2].setsLost += hSets;
+    teams[team1].points += hPts;
+    teams[team2].points += aPts;
   });
 
-  const arr = Object.values(teams);
+  return Object.values(teams).sort((a,b) => {
+    // najpierw punkty meczowe, potem set ratio, potem małe punkty
+    const setRatioA = a.setsLost===0 ? Infinity : a.setsWon/a.setsLost;
+    const setRatioB = b.setsLost===0 ? Infinity : b.setsWon/b.setsLost;
+    const pointsRatioA = a.points / Math.max(1,b.points);
+    const pointsRatioB = b.points / Math.max(1,a.points);
 
-  arr.forEach(t => {
-    t.setRatio   = t.setLost === 0 ? t.setWon : t.setWon / t.setLost;
-    t.pointRatio = t.pLost  === 0 ? t.pWon  : t.pWon  / t.pLost;
+    return b.matchPts - a.matchPts || setRatioB - setRatioA || pointsRatioB - pointsRatioA;
   });
-
-  arr.sort((a, b) =>
-    b.big - a.big ||
-    b.setRatio - a.setRatio ||
-    b.pointRatio - a.pointRatio
-  );
-
-  return arr.map((t, i) => [
-    `${i + 1}`,
-    t.team,
-    t.big,
-    t.setRatio.toFixed(3),
-    t.pointRatio.toFixed(3)
-  ]);
 }
 
 
