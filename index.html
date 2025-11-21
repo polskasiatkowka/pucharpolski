@@ -253,39 +253,43 @@ function computeTable(rows) {
   const teams = {};
 
   rows.forEach(r => {
-    const team1 = r[1]; // Gospodarz
-    const team2 = r[2]; // Gość
-    const setsStr = r[4]; // Sety "25-22,16-25,15-13"
+  const team1 = r[1]; // Gospodarz
+  const team2 = r[2]; // Gość
+  const setsStr = r[4]; // Sety "25-22,16-25,15-13"
 
-    if (!team1 || !team2 || !setsStr) return;
+  if (!team1 || !team2 || !setsStr) return;
 
-    const sets = setsStr.split(',').map(s => s.trim()).filter(s => s);
-    let hSets = 0, aSets = 0;
+  const sets = setsStr.split(',').map(s => s.trim()).filter(s => s);
 
-    sets.forEach(s => {
-      const [hp, ap] = s.split('-').map(Number);
-      if (!isNaN(hp) && !isNaN(ap)) {
-        if (hp > ap) hSets++;
-        else if (ap > hp) aSets++;
-      }
-    });
+  let hSets = 0, aSets = 0;
+  let hPts = 0, aPts = 0; // <-- dodaj tutaj
 
-    // Punkty meczowe: zwycięzca 2, przegrany 1
-    const hMatchPts = hSets > aSets ? 2 : 1;
-    const aMatchPts = aSets > hSets ? 2 : 1;
-
-    if (!teams[team1]) teams[team1] = { team: team1, matchPts: 0, setsWon: 0, setsLost: 0, points: 0 };
-    if (!teams[team2]) teams[team2] = { team: team2, matchPts: 0, setsWon: 0, setsLost: 0, points: 0 };
-
-    teams[team1].matchPts += hMatchPts;
-    teams[team2].matchPts += aMatchPts;
-    teams[team1].setsWon += hSets;
-    teams[team1].setsLost += aSets;
-    teams[team2].setsWon += aSets;
-    teams[team2].setsLost += hSets;
-    teams[team1].points += hPts;
-    teams[team2].points += aPts;
+  sets.forEach(s => {
+    const [hp, ap] = s.split('-').map(Number);
+    if (!isNaN(hp) && !isNaN(ap)) {
+      hPts += hp;  // sumujemy punkty
+      aPts += ap;
+      if (hp > ap) hSets++;
+      else if (ap > hp) aSets++;
+    }
   });
+
+  // Punkty meczowe: zwycięzca 2, przegrany 1
+  const hMatchPts = hSets > aSets ? 2 : 1;
+  const aMatchPts = aSets > hSets ? 2 : 1;
+
+  if (!teams[team1]) teams[team1] = { team: team1, matchPts: 0, setsWon: 0, setsLost: 0, points: 0 };
+  if (!teams[team2]) teams[team2] = { team: team2, matchPts: 0, setsWon: 0, setsLost: 0, points: 0 };
+
+  teams[team1].matchPts += hMatchPts;
+  teams[team2].matchPts += aMatchPts;
+  teams[team1].setsWon += hSets;
+  teams[team1].setsLost += aSets;
+  teams[team2].setsWon += aSets;
+  teams[team2].setsLost += hSets;
+  teams[team1].points += hPts; // teraz OK
+  teams[team2].points += aPts; // teraz OK
+});
 
   return Object.values(teams).sort((a,b) => {
     // najpierw punkty meczowe, potem set ratio, potem małe punkty
