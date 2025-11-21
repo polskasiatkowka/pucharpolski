@@ -253,54 +253,60 @@ function computeTable(rows) {
   const teams = {};
 
   rows.forEach(r => {
-  const team1 = r[1]; // Gospodarz
-  const team2 = r[2]; // Gość
-  const setsStr = r[4]; // Sety "25-22,16-25,15-13"
+    const team1 = r[1];
+    const team2 = r[2];
+    const setsStr = r[4]; // Sety w formacie "25-22,16-25,15-13"
 
-  if (!team1 || !team2 || !setsStr) return;
+    if (!team1 || !team2 || !setsStr) return;
 
-  const sets = setsStr.split(',').map(s => s.trim()).filter(s => s);
+    const sets = setsStr.split(',').map(s => s.trim());
 
-  let hSets = 0, aSets = 0;
-  let hPts = 0, aPts = 0; // <-- dodaj tutaj
+    // Deklaracja wszystkich zmiennych w tym samym scope
+    let hSets = 0, aSets = 0;
+    let hPts = 0, aPts = 0;
 
-  sets.forEach(s => {
-    const [hp, ap] = s.split('-').map(Number);
-    if (!isNaN(hp) && !isNaN(ap)) {
-      hPts += hp;  // sumujemy punkty
-      aPts += ap;
-      if (hp > ap) hSets++;
-      else if (ap > hp) aSets++;
-    }
+    sets.forEach(s => {
+      const [hp, ap] = s.split('-').map(Number);
+      if (!isNaN(hp) && !isNaN(ap)) {
+        hPts += hp;
+        aPts += ap;
+
+        if (hp > ap) hSets++;
+        else if (ap > hp) aSets++;
+      }
+    });
+
+    // Obliczanie punktów meczowych
+    let hMatchPts = 0, aMatchPts = 0;
+    if (hSets > aSets) hMatchPts = 2;
+    else if (aSets > hSets) aMatchPts = 2;
+    else { hMatchPts = 1; aMatchPts = 1; } // remis
+
+    // Inicjalizacja zespołów w obiekcie
+    if (!teams[team1]) teams[team1] = { team: team1, matchPts: 0, setsWon: 0, setsLost: 0, points: 0 };
+    if (!teams[team2]) teams[team2] = { team: team2, matchPts: 0, setsWon: 0, setsLost: 0, points: 0 };
+
+    // Aktualizacja statystyk
+    teams[team1].matchPts += hMatchPts;
+    teams[team2].matchPts += aMatchPts;
+
+    teams[team1].setsWon += hSets;
+    teams[team1].setsLost += aSets;
+    teams[team2].setsWon += aSets;
+    teams[team2].setsLost += hSets;
+
+    teams[team1].points += hPts;
+    teams[team2].points += aPts;
   });
 
-  // Punkty meczowe: zwycięzca 2, przegrany 1
-  const hMatchPts = hSets > aSets ? 2 : 1;
-  const aMatchPts = aSets > hSets ? 2 : 1;
-
-  if (!teams[team1]) teams[team1] = { team: team1, matchPts: 0, setsWon: 0, setsLost: 0, points: 0 };
-  if (!teams[team2]) teams[team2] = { team: team2, matchPts: 0, setsWon: 0, setsLost: 0, points: 0 };
-
-  teams[team1].matchPts += hMatchPts;
-  teams[team2].matchPts += aMatchPts;
-  teams[team1].setsWon += hSets;
-  teams[team1].setsLost += aSets;
-  teams[team2].setsWon += aSets;
-  teams[team2].setsLost += hSets;
-  teams[team1].points += hPts; // teraz OK
-  teams[team2].points += aPts; // teraz OK
-});
-
-  return Object.values(teams).sort((a,b) => {
-    // najpierw punkty meczowe, potem set ratio, potem małe punkty
-    const setRatioA = a.setsLost===0 ? Infinity : a.setsWon/a.setsLost;
-    const setRatioB = b.setsLost===0 ? Infinity : b.setsWon/b.setsLost;
-    const pointsRatioA = a.points / Math.max(1,b.points);
-    const pointsRatioB = b.points / Math.max(1,a.points);
-
-    return b.matchPts - a.matchPts || setRatioB - setRatioA || pointsRatioB - pointsRatioA;
+  // Konwersja do tablicy i sortowanie tabeli
+  return Object.values(teams).sort((a, b) => {
+    if (b.matchPts !== a.matchPts) return b.matchPts - a.matchPts;
+    if ((b.setsWon - b.setsLost) !== (a.setsWon - a.setsLost)) return (b.setsWon - b.setsLost) - (a.setsWon - a.setsLost);
+    return b.points - a.points;
   });
 }
+
 
 
 // ========= Status/kolory wierszy =========
