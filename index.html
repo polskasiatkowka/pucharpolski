@@ -213,25 +213,47 @@ function makeTableEl(headers, rows){
   return wrap;
 }
 
-// ========= Sety + punktacja 2/1 =========
-// Funkcja licząca sety i punkty dla pojedynczego meczu
-function parseSets(setsStr){
-  const txt = (setsStr||'').toString().trim();
-  if (!txt) return {hSets:0, aSets:0, hPts:0, aPts:0};
-
-  const parts = txt.split(/[\s,]+/);
-  let hSets=0, aSets=0, hPts=0, aPts=0;
-
-  parts.forEach(p=>{
-    const [h,a] = p.split(':').map(n=>parseInt(n,10));
-    if(isNaN(h)||isNaN(a)) return;
-    hPts += h;
-    aPts += a;
-    if(h > a) hSets++;
-    else if(a > h) aSets++;
+function parseSets(txt) {
+  if (!txt) return [];
+  const parts = txt.replace(/,/g, ' ').trim().split(/\s+/);
+  return parts.map(s => {
+    const [g, o] = s.split(':').map(Number);
+    return { g, o };
   });
+}
 
-  return {hSets, aSets, hPts, aPts};
+function calculateResults(sheetData) {
+  // sheetData to np. wynik z read('M_LIGA1')
+  const results = {};
+  
+  sheetData.forEach(row => {
+    const date = row[0];
+    const home = row[1];
+    const away = row[2];
+    const setsTxt = row[4]; // zakładam, że 5-ta kolumna to 'Sety'
+    
+    const sets = parseSets(setsTxt);
+    
+    let homeSets = 0;
+    let awaySets = 0;
+    
+    sets.forEach(({ g, o }) => {
+      if (g > o) homeSets++;
+      else awaySets++;
+    });
+    
+    // zapis wyników w formacie: "homeSets:awaySets"
+    results[home + ' vs ' + away] = homeSets + ':' + awaySets;
+  });
+  
+  return results;
+}
+
+// przykład użycia
+function testResults() {
+  const data = readAll().m_liga1; // pobranie danych z M_LIGA1
+  const res = calculateResults(data);
+  Logger.log(res);
 }
 
 // Funkcja generująca ranking z listy meczów
