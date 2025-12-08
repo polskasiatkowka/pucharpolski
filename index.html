@@ -225,11 +225,26 @@ function parseSets(setsStr){
   });
   return {hSets,aSets,hPts,aPts};
 }
-function matchPointsTwoOne(hSets,aSets){
-  if ((hSets+aSets)===0) return {home:0,away:0};
-  if (hSets>aSets) return {home:2,away:1};
-  if (aSets>hSets) return {home:1,away:2};
-  return {home:0,away:0};
+function matchPointsTwoOne(hSets, aSets) {
+  if ((hSets + aSets) === 0) return { home: 0, away: 0 };
+
+  // Gospodarz wygrywa
+  if (hSets > aSets) {
+    return {
+      home: 2,
+      away: (aSets === 1 ? 1 : 0) // 1 punkt tylko za 1:2
+    };
+  }
+
+  // Gość wygrywa
+  if (aSets > hSets) {
+    return {
+      home: (hSets === 1 ? 1 : 0),
+      away: 2
+    };
+  }
+
+  return { home: 0, away: 0 };
 }
 function computeTable(rows){
   const teams={};
