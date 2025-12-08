@@ -235,17 +235,22 @@ function matchPointsTwoOne(hSets, aSets){
 
 function computeTable(rows){
     const teams = {};
-    const ensure = (name) => teams[name] || (teams[name] = {
-        team: name,
-        matches: 0,
-        wins: 0,
-        losses: 0,
-        setsFor: 0,
-        setsAgainst: 0,
-        smallFor: 0,
-        smallAgainst: 0,
-        points: 0
-    }));
+    function ensure(name){
+        if (!teams[name]){
+            teams[name] = {
+                team: name,
+                matches: 0,
+                wins: 0,
+                losses: 0,
+                setsFor: 0,
+                setsAgainst: 0,
+                smallFor: 0,
+                smallAgainst: 0,
+                points: 0
+            };
+        }
+        return teams[name];
+    }
 
     rows.forEach(r => {
         const home = (r[1] || '').toString().trim();
@@ -259,41 +264,29 @@ function computeTable(rows){
 
         if ((hSets + aSets) === 0) return; // brak rozegranych setów
 
-        // Każdą drużynę pewnie zainicjalizuj
         const H = ensure(home);
         const A = ensure(away);
 
-        // Sumujemy sety i punkty niezależnie od bycia gospodarzem/ gościem
-        // ✅ Poprawka: dodajemy wszystkie sety wygrane w meczu
-        H.setsFor += hSets;
-        H.setsAgainst += aSets;
-        A.setsFor += aSets;
-        A.setsAgainst += hSets;
+        H.setsFor += hSets; H.setsAgainst += aSets;
+        A.setsFor += aSets; A.setsAgainst += hSets;
 
-        H.smallFor += hPts;
-        H.smallAgainst += aPts;
-        A.smallFor += aPts;
-        A.smallAgainst += hPts;
+        H.smallFor += hPts; H.smallAgainst += aPts;
+        A.smallFor += aPts; A.smallAgainst += hPts;
 
-        // Punkty 2/1
         const {home:hp, away:ap} = matchPointsTwoOne(hSets, aSets);
-        H.points += hp;
-        A.points += ap;
+        H.points += hp; A.points += ap;
 
-        // Mecze rozegrane i zwycięstwa / porażki
         H.matches++; A.matches++;
         if (hSets > aSets){ H.wins++; A.losses++; }
         else if (aSets > hSets){ A.wins++; H.losses++; }
     });
 
-    // Przygotowanie do sortowania
     const arr = Object.values(teams).map(t => ({
         ...t,
         smallDiff: t.smallFor - t.smallAgainst,
         setRatio: t.setsAgainst === 0 ? (t.setsFor > 0 ? Infinity : 0) : t.setsFor / t.setsAgainst
     }));
 
-    // Sortowanie: punkty → set ratio → małe punkty → nazwa drużyny
     arr.sort((a,b) => {
         if (b.points !== a.points) return b.points - a.points;
         if (b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;
@@ -303,7 +296,6 @@ function computeTable(rows){
 
     return arr;
 }
-
 
 
 // ========= Status/kolory wierszy =========
