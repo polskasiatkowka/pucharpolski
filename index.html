@@ -217,7 +217,8 @@ function makeTableEl(headers, rows){
 function parseSets(setsStr){
   const txt = (setsStr||'').toString().trim();
   if (!txt) return {hSets:0,aSets:0,hPts:0,aPts:0};
-  const parts = txt.split(/\s+/);
+  // rozdzielamy każdy set po spacji lub przecinku
+  const parts = txt.split(/[\s,]+/);
   let hSets=0, aSets=0, hPts=0, aPts=0;
   parts.forEach(p=>{
     const [h,a] = p.split(':').map(n=>parseInt(n,10));
