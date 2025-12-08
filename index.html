@@ -308,11 +308,10 @@ function generateRanking(matches){
 }
 
 
-function matchPointsTwoOne(hSets,aSets){
-  if (hSets + aSets === 0) return {home:0, away:0};
-  if (hSets > aSets) return {home:2, away:1};
-  if (aSets > hSets) return {home:1, away:2};
-  return {home:0, away:0};
+function matchPointsTwoOne(hSets, aSets){
+  if(hSets > aSets) return {home:2, away:1};
+  if(aSets > hSets) return {home:1, away:2};
+  return {home:1, away:1}; // opcjonalnie remis
 }
 
 // ========= Poprawione computeTable =========
