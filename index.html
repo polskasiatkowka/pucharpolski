@@ -216,17 +216,21 @@ function makeTableEl(headers, rows){
 // ========= Sety + punktacja 2/1 =========
 function parseSets(setsStr){
   const txt = (setsStr||'').toString().trim();
-  if (!txt) return {hSets:0,aSets:0,hPts:0,aPts:0};
-  const parts = txt.split(/\s+/); 
+  if (!txt) return {hSets:0, aSets:0, hPts:0, aPts:0};
+
+  // Rozdzielamy po przecinku i/lub spacji
+  const parts = txt.split(/[\s,]+/); 
   let hSets=0, aSets=0, hPts=0, aPts=0;
+
   parts.forEach(p=>{
     const [h,a] = p.split(':').map(n=>parseInt(n,10));
-    if (isNaN(h) || isNaN(a)) return;
-    hPts += h;
+    if (isNaN(h)||isNaN(a)) return;
+    hPts += h; 
     aPts += a;
     if (h > a) hSets++; 
     else if (a > h) aSets++;
   });
+
   return {hSets,aSets,hPts,aPts};
 }
 
