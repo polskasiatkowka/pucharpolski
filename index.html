@@ -225,53 +225,79 @@ function parseSets(setsStr){
   });
   return {hSets,aSets,hPts,aPts};
 }
-function matchPointsTwoOne(hSets, aSets) {
-  if ((hSets + aSets) === 0) return { home: 0, away: 0 };
-
-  // Gospodarz wygrywa
-  if (hSets > aSets) {
-    return {
-      home: 2,
-      away: (aSets === 1 ? 1 : 0) // 1 punkt tylko za 1:2
-    };
-  }
-
-  // Gość wygrywa
-  if (aSets > hSets) {
-    return {
-      home: (hSets === 1 ? 1 : 0),
-      away: 2
-    };
-  }
-
-  return { home: 0, away: 0 };
+// ======= Funkcja punktów 2/1 =======
+function matchPointsTwoOne(hSets, aSets){
+    if ((hSets + aSets) === 0) return {home:0, away:0}; // brak rozegranych setów
+    if (hSets > aSets) return {home:2, away:1};
+    if (aSets > hSets) return {home:1, away:2};
+    return {home:0, away:0}; // teoretycznie nie występuje remis
 }
+
+// ======= Poprawiona funkcja licząca tabelę =======
 function computeTable(rows){
-  const teams={};
-  const ensure=n=>teams[n]||(teams[n]={team:n,matches:0,wins:0,losses:0,setsFor:0,setsAgainst:0,smallFor:0,smallAgainst:0,points:0});
-  rows.forEach(r=>{
-    const [ , home, away, , setsStr] = r;
-    if (!home || !away) return;
-    const {hSets,aSets,hPts,aPts}=parseSets(setsStr);
-    const {home:hp,away:ap}=matchPointsTwoOne(hSets,aSets);
-    const H=ensure(home), A=ensure(away);
-    if ((hSets+aSets)>0){
-      H.matches++; A.matches++;
-      if (hSets>aSets){ H.wins++; A.losses++; } else if (aSets>hSets){ A.wins++; H.losses++; }
-      H.setsFor+=hSets; H.setsAgainst+=aSets; A.setsFor+=aSets; A.setsAgainst+=hSets;
-      H.smallFor+=hPts; H.smallAgainst+=aPts; A.smallFor+=aPts; A.smallAgainst+=hPts;
-      H.points+=hp; A.points+=ap;
-    }
-  });
-  const arr=Object.values(teams).map(t=>({ ...t, smallDiff:t.smallFor-t.smallAgainst, setRatio: t.setsAgainst===0 ? (t.setsFor>0?Infinity:0) : t.setsFor/t.setsAgainst }));
-  arr.sort((a,b)=>{
-    if (b.points !== a.points) return b.points - a.points;           // duże punkty
-    if (b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;   // ratio sety
-    if (b.smallDiff !== a.smallDiff) return b.smallDiff - a.smallDiff; // ratio małe punkty
-    return a.team.localeCompare(b.team,'pl');
-});
-  return arr;
+    const teams = {};
+    const ensure = (name) => teams[name] || (teams[name] = {
+        team: name,
+        matches: 0,
+        wins: 0,
+        losses: 0,
+        setsFor: 0,
+        setsAgainst: 0,
+        smallFor: 0,
+        smallAgainst: 0,
+        points: 0
+    });
+
+    rows.forEach(r => {
+        const home = (r[1] || '').toString().trim();
+        const away = (r[2] || '').toString().trim();
+        const setsStr = (r[4] || '').toString().trim();
+
+        if (!home || !away || !setsStr) return;
+
+        const {hSets, aSets, hPts, aPts} = parseSets(setsStr);
+        if ((hSets + aSets) === 0) return;
+
+        const {home: hp, away: ap} = matchPointsTwoOne(hSets, aSets);
+
+        const H = ensure(home);
+        const A = ensure(away);
+
+        // mecze
+        H.matches++; A.matches++;
+        if (hSets > aSets){ H.wins++; A.losses++; }
+        else if (aSets > hSets){ A.wins++; H.losses++; }
+
+        // sety
+        H.setsFor += hSets; H.setsAgainst += aSets;
+        A.setsFor += aSets; A.setsAgainst += hSets;
+
+        // małe punkty (punkty w setach)
+        H.smallFor += hPts; H.smallAgainst += aPts;
+        A.smallFor += aPts; A.smallAgainst += hPts;
+
+        // punkty 2/1
+        H.points += hp; A.points += ap;
+    });
+
+    // przygotowanie do sortowania
+    const arr = Object.values(teams).map(t => ({
+        ...t,
+        smallDiff: t.smallFor - t.smallAgainst,
+        setRatio: t.setsAgainst === 0 ? (t.setsFor > 0 ? Infinity : 0) : t.setsFor / t.setsAgainst
+    }));
+
+    // sortowanie: punkty → set ratio → małe punkty → nazwa drużyny
+    arr.sort((a,b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;
+        if (b.smallDiff !== a.smallDiff) return b.smallDiff - a.smallDiff;
+        return a.team.localeCompare(b.team, 'pl');
+    });
+
+    return arr;
 }
+
 
 // ========= Status/kolory wierszy =========
 function hasScoreOrSets(score, sets){ const sOk = typeof score==='string' && score.includes(':'); const setsOk = typeof sets==='string' && /\d+:\d+/.test(sets); return sOk || setsOk; }
