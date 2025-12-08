@@ -318,28 +318,30 @@ function matchPointsTwoOne(hSets,aSets){
 function computeTable(rows){
   const teams = {};
   
+  // filtrujemy tylko mecze z wynikami
+  const playedRows = rows.filter(r => {
+    const setsStr = (r[4]||'').toString().trim();
+    return setsStr && /\d+:\d+/.test(setsStr);
+  });
+
   // pomocnik: zwraca obiekt drużyny lub tworzy nowy
   const ensure = name => teams[name] || (teams[name] = {
     team: name, matches:0, wins:0, losses:0, setsFor:0, setsAgainst:0, smallFor:0, smallAgainst:0, points:0
   });
 
-  rows.forEach(r=>{
+  playedRows.forEach(r=>{
     const homeName = (r[1]||'').toString().trim();
     const awayName = (r[2]||'').toString().trim();
     const setsStr = (r[4]||'').toString().trim();
 
-    if(!homeName || !awayName || !setsStr) return;
-
     const {hSets, aSets, hPts, aPts} = parseSets(setsStr);
-    if(hSets + aSets === 0) return; // mecz bez setów – ignoruj
-
     const home = ensure(homeName);
     const away = ensure(awayName);
 
     // mecze
     home.matches++; away.matches++;
 
-    // sety i małe punkty – zawsze „dla drużyny”
+    // sety i małe punkty
     home.setsFor += hSets;
     home.setsAgainst += aSets;
     home.smallFor += hPts;
@@ -350,7 +352,7 @@ function computeTable(rows){
     away.smallFor += aPts;
     away.smallAgainst += hPts;
 
-    // punkty meczowe 2/1
+    // punkty 2/1
     const {home:hp, away:ap} = matchPointsTwoOne(hSets, aSets);
     home.points += hp;
     away.points += ap;
@@ -360,18 +362,17 @@ function computeTable(rows){
     else if(aSets > hSets){ away.wins++; home.losses++; }
   });
 
-  // konwertujemy na tablicę do sortowania
+  // konwertujemy na tablicę i sortujemy jak wcześniej
   const arr = Object.values(teams).map(t=>({
     ...t,
     setRatio: t.setsAgainst===0 ? (t.setsFor>0 ? Infinity : 0) : t.setsFor / t.setsAgainst,
     smallDiff: t.smallFor - t.smallAgainst
   }));
 
-  // sortowanie: punkty, ratio sety, różnica małych punktów, alfabet
   arr.sort((a,b)=>{
-    if(b.points !== a.points) return b.points - a.points;
-    if(b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;
-    if(b.smallDiff !== a.smallDiff) return b.smallDiff - a.smallDiff;
+    if(b.points!==a.points) return b.points-a.points;
+    if(b.setRatio!==a.setRatio) return b.setRatio-a.setRatio;
+    if(b.smallDiff!==a.smallDiff) return b.smallDiff-a.smallDiff;
     return a.team.localeCompare(b.team,'pl');
   });
 
