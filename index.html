@@ -243,32 +243,27 @@ function computeTable(rows){
     setsFor:0, setsAgainst:0, smallFor:0, smallAgainst:0, points:0
   });
 
-  rows.forEach(r=>{
-    const [ , home, away, , setsStr] = r;
-    if (!home || !away) return;
+ rows.forEach(r=>{
+  const [ , home, away, , setsStr] = r;
+  if (!home || !away) return;
+  const {hSets,aSets,hPts,aPts} = parseSets(setsStr);
+  const {home:hp,away:ap} = matchPointsTwoOne(hSets,aSets); // tylko punkty
+  const H = ensure(home), A = ensure(away);
+  if ((hSets+aSets) > 0){
+    H.matches++; A.matches++;
+    if (hSets > aSets){ H.wins++; A.losses++; }
+    else if (aSets > hSets){ A.wins++; H.losses++; }
 
-    const {hSets,aSets,hPts,aPts} = parseSets(setsStr);
-    const {home:hp, away:ap} = matchPointsTwoOne(hSets,aSets);
+    // używamy prawdziwych setów z parseSets
+    H.setsFor += hSets; H.setsAgainst += aSets;
+    A.setsFor += aSets; A.setsAgainst += hSets;
 
-    const H = ensure(home), A = ensure(away);
+    H.smallFor += hPts; H.smallAgainst += aPts;
+    A.smallFor += aPts; A.smallAgainst += hPts;
 
-    // tylko jeśli podano sety
-    if ((hSets+aSets) > 0){
-      H.matches++; A.matches++;
-
-      if (hSets > aSets){ H.wins++; A.losses++; } 
-      else if (aSets > hSets){ A.wins++; H.losses++; }
-
-      // **tu liczymy sety dokładnie według tego co w arkuszu**
-      H.setsFor += hSets; H.setsAgainst += aSets;
-      A.setsFor += aSets; A.setsAgainst += hSets;
-
-      H.smallFor += hPts; H.smallAgainst += aPts;
-      A.smallFor += aPts; A.smallAgainst += hPts;
-
-      H.points += hp; A.points += ap;
-    }
-  });
+    H.points += hp; A.points += ap;
+  }
+});
 
   const arr = Object.values(teams).map(t=>({
     ...t,
