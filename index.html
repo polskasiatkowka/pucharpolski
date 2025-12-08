@@ -732,25 +732,26 @@ function viewLigaM(rows){
   const root = document.createElement('div');
   const order = ['', 'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
 
-  Object.keys(byLiga).sort((a,b)=> order.indexOf(a) - order.indexOf(b)).forEach(l => {
+  Object.keys(byLiga).sort((a,b) => order.indexOf(a) - order.indexOf(b)).forEach(l => {
     const pack = byLiga[l];
-    const grid = document.createElement('div'); 
+    if (!pack || !pack.length) return;
+
+    const grid = document.createElement('div');
     grid.className = 'grid';
 
+    // Terminarz
     const term = renderTermLigaM(`Młodzik – Liga ${l}`, pack);
 
-    // 🔹 uwzględniamy tylko mecze z setami lub wynikiem
-    const allMatches = pack.filter(r => hasScoreOrSets(r[3], r[4]));
-    const tableData = computeTable(allMatches);
-
-    const rank = renderRanking(`Ranking – Młodzik – Liga ${l}`, tableData);
+    // Ranking – tylko rozegrane mecze
+    const playedMatches = pack.filter(r => hasScoreOrSets(r[3], r[4]));
+    const rank = renderRanking(`Ranking – Młodzik – Liga ${l}`, computeTable(playedMatches));
 
     grid.appendChild(term);
     grid.appendChild(rank);
     root.appendChild(grid);
   });
 
-  if (!root.children.length){
+  if (!root.children.length) {
     root.appendChild(makeCard(`Młodzik – Liga`, document.createTextNode('Brak danych')));
   }
   return root;
@@ -761,25 +762,26 @@ function viewLigaF(rows){
   const root = document.createElement('div');
   const order = ['', 'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
 
-  Object.keys(byLiga).sort((a,b)=> order.indexOf(a) - order.indexOf(b)).forEach(l => {
+  Object.keys(byLiga).sort((a,b) => order.indexOf(a) - order.indexOf(b)).forEach(l => {
     const pack = byLiga[l];
-    const grid = document.createElement('div'); 
+    if (!pack || !pack.length) return;
+
+    const grid = document.createElement('div');
     grid.className = 'grid';
 
+    // Terminarz
     const term = renderTermLigaF(`Młodziczka – Liga ${l}`, pack);
 
-    // 🔹 uwzględniamy wszystkie rozegrane mecze
-    const allMatches = pack.filter(r => hasScoreOrSets(r[3], r[4]));
-    const tableData = computeTable(allMatches);
-
-    const rank = renderRanking(`Ranking – Młodziczka – Liga ${l}`, tableData);
+    // Ranking – tylko rozegrane mecze
+    const playedMatches = pack.filter(r => hasScoreOrSets(r[3], r[4]));
+    const rank = renderRanking(`Ranking – Młodziczka – Liga ${l}`, computeTable(playedMatches));
 
     grid.appendChild(term);
     grid.appendChild(rank);
     root.appendChild(grid);
   });
 
-  if (!root.children.length){
+  if (!root.children.length) {
     root.appendChild(makeCard(`Młodziczka – Liga`, document.createTextNode('Brak danych')));
   }
   return root;
