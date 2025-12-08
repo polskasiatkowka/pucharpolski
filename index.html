@@ -246,7 +246,7 @@ function computeTable(rows){
         smallFor: 0,
         smallAgainst: 0,
         points: 0
-    });
+    }));
 
     rows.forEach(r => {
         const home = (r[1] || '').toString().trim();
@@ -255,44 +255,46 @@ function computeTable(rows){
 
         if (!home || !away || !setsStr) return;
 
+        // Parsujemy sety
         const {hSets, aSets, hPts, aPts} = parseSets(setsStr);
-        if ((hSets + aSets) === 0) return;
 
-        const {home: hp, away: ap} = matchPointsTwoOne(hSets, aSets);
+        if ((hSets + aSets) === 0) return; // brak rozegranych setów
 
+        // Każdą drużynę pewnie zainicjalizuj
         const H = ensure(home);
         const A = ensure(away);
 
-        // mecze
-        H.matches++; A.matches++;
-        if (hSets > aSets){ H.wins++; A.losses++; }
-        else if (aSets > hSets){ A.wins++; H.losses++; }
-
-        // sety
+        // Sumujemy sety i punkty niezależnie od bycia gospodarzem/ gościem
         H.setsFor += hSets; H.setsAgainst += aSets;
         A.setsFor += aSets; A.setsAgainst += hSets;
 
-        // małe punkty (punkty w setach)
         H.smallFor += hPts; H.smallAgainst += aPts;
         A.smallFor += aPts; A.smallAgainst += hPts;
 
-        // punkty 2/1
-        H.points += hp; A.points += ap;
+        // Punkty 2/1
+        const {home:hp, away:ap} = matchPointsTwoOne(hSets, aSets);
+        H.points += hp;
+        A.points += ap;
+
+        // Mecze rozegrane i zwycięstwa / porażki
+        H.matches++; A.matches++;
+        if (hSets > aSets){ H.wins++; A.losses++; }
+        else if (aSets > hSets){ A.wins++; H.losses++; }
     });
 
-    // przygotowanie do sortowania
+    // Przygotowanie do sortowania
     const arr = Object.values(teams).map(t => ({
         ...t,
         smallDiff: t.smallFor - t.smallAgainst,
         setRatio: t.setsAgainst === 0 ? (t.setsFor > 0 ? Infinity : 0) : t.setsFor / t.setsAgainst
     }));
 
-    // sortowanie: punkty → set ratio → małe punkty → nazwa drużyny
+    // Sortowanie: punkty → set ratio → małe punkty → nazwa drużyny
     arr.sort((a,b) => {
         if (b.points !== a.points) return b.points - a.points;
         if (b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;
         if (b.smallDiff !== a.smallDiff) return b.smallDiff - a.smallDiff;
-        return a.team.localeCompare(b.team, 'pl');
+        return a.team.localeCompare(b.team,'pl');
     });
 
     return arr;
