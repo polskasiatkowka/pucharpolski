@@ -315,26 +315,25 @@ function matchPointsTwoOne(hSets,aSets){
   return {home:0, away:0};
 }
 
+// ========= Poprawione computeTable =========
 function computeTable(rows){
   const teams = {};
-  
-  // filtrujemy tylko mecze z wynikami
-  const playedRows = rows.filter(r => {
-    const setsStr = (r[4]||'').toString().trim();
-    return setsStr && /\d+:\d+/.test(setsStr);
-  });
 
   // pomocnik: zwraca obiekt drużyny lub tworzy nowy
   const ensure = name => teams[name] || (teams[name] = {
     team: name, matches:0, wins:0, losses:0, setsFor:0, setsAgainst:0, smallFor:0, smallAgainst:0, points:0
   });
 
-  playedRows.forEach(r=>{
+  rows.forEach(r=>{
     const homeName = (r[1]||'').toString().trim();
     const awayName = (r[2]||'').toString().trim();
     const setsStr = (r[4]||'').toString().trim();
 
+    if(!homeName || !awayName || !setsStr) return;
+
     const {hSets, aSets, hPts, aPts} = parseSets(setsStr);
+    if(hSets + aSets === 0) return; // <-- ignorujemy mecze bez setów
+
     const home = ensure(homeName);
     const away = ensure(awayName);
 
@@ -352,7 +351,7 @@ function computeTable(rows){
     away.smallFor += aPts;
     away.smallAgainst += hPts;
 
-    // punkty 2/1
+    // punkty meczowe 2/1
     const {home:hp, away:ap} = matchPointsTwoOne(hSets, aSets);
     home.points += hp;
     away.points += ap;
@@ -362,17 +361,18 @@ function computeTable(rows){
     else if(aSets > hSets){ away.wins++; home.losses++; }
   });
 
-  // konwertujemy na tablicę i sortujemy jak wcześniej
+  // konwertujemy na tablicę do sortowania
   const arr = Object.values(teams).map(t=>({
     ...t,
     setRatio: t.setsAgainst===0 ? (t.setsFor>0 ? Infinity : 0) : t.setsFor / t.setsAgainst,
     smallDiff: t.smallFor - t.smallAgainst
   }));
 
+  // sortowanie: punkty, ratio sety, różnica małych punktów, alfabet
   arr.sort((a,b)=>{
-    if(b.points!==a.points) return b.points-a.points;
-    if(b.setRatio!==a.setRatio) return b.setRatio-a.setRatio;
-    if(b.smallDiff!==a.smallDiff) return b.smallDiff-a.smallDiff;
+    if(b.points !== a.points) return b.points - a.points;
+    if(b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;
+    if(b.smallDiff !== a.smallDiff) return b.smallDiff - a.smallDiff;
     return a.team.localeCompare(b.team,'pl');
   });
 
@@ -724,61 +724,57 @@ function computeCustomTop4(pack, idxA, idxB) {
   return res;
 }
 
-function viewLigaM(rows){
-  const byLiga = groupByLiga(rows, 5);
-  const root = document.createElement('div');
-  const order = ['', 'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
-
-  Object.keys(byLiga).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(l=>{
-    const pack = byLiga[l];
-    if (!pack || !pack.length) return;
-
-    const grid = document.createElement('div'); 
-    grid.className='grid';
-
-    const term = renderTermLigaM(`Młodzik – Liga ${l}`, pack);
-
-    // ranking liczymy tylko dla rozegranych meczów
-    const playedMatches = pack.filter(r=>hasScoreOrSets(r[3], r[4]));
-    const rank = renderRanking(`Ranking – Młodzik – Liga ${l}`, computeTable(playedMatches));
-
-    grid.appendChild(term);
-    grid.appendChild(rank);
-    root.appendChild(grid);
-  });
-
-  if (!root.children.length){
-    root.appendChild(makeCard(`Młodzik – Liga`, document.createTextNode('Brak danych')));
-  }
-
-  return root;
-}
-
+// ========= Poprawione viewLigaF =========
 function viewLigaF(rows){
-  const byLiga = groupByLiga(rows, 5);
+  const byLiga = groupByLiga(rows, 5); // kolumna „Liga”
   const root = document.createElement('div');
-  const order = ['', 'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
+  const order = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
 
   Object.keys(byLiga).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(l=>{
     const pack = byLiga[l];
-    if (!pack || !pack.length) return;
+    if(!pack || pack.length===0) return; // dodatkowy filtr pustych
 
     const grid = document.createElement('div'); 
     grid.className='grid';
 
     const term = renderTermLigaF(`Młodziczka – Liga ${l}`, pack);
-
-    // ranking liczymy tylko dla rozegranych meczów
-    const playedMatches = pack.filter(r=>hasScoreOrSets(r[3], r[4]));
-    const rank = renderRanking(`Ranking – Młodziczka – Liga ${l}`, computeTable(playedMatches));
+    const rank = renderRanking(`Ranking – Młodziczka – Liga ${l}`, computeTable(pack));
 
     grid.appendChild(term);
     grid.appendChild(rank);
     root.appendChild(grid);
   });
 
-  if (!root.children.length){
+  if(!root.children.length){
     root.appendChild(makeCard(`Młodziczka – Liga`, document.createTextNode('Brak danych')));
+  }
+
+  return root;
+}
+
+// ========= Poprawione viewLigaM =========
+function viewLigaM(rows){
+  const byLiga = groupByLiga(rows, 5); // kolumna „Liga”
+  const root = document.createElement('div');
+  const order = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
+
+  Object.keys(byLiga).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(l=>{
+    const pack = byLiga[l];
+    if(!pack || pack.length===0) return;
+
+    const grid = document.createElement('div'); 
+    grid.className='grid';
+
+    const term = renderTermLigaM(`Młodzik – Liga ${l}`, pack);
+    const rank = renderRanking(`Ranking – Młodzik – Liga ${l}`, computeTable(pack));
+
+    grid.appendChild(term);
+    grid.appendChild(rank);
+    root.appendChild(grid);
+  });
+
+  if(!root.children.length){
+    root.appendChild(makeCard(`Młodzik – Liga`, document.createTextNode('Brak danych')));
   }
 
   return root;
