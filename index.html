@@ -215,14 +215,24 @@ function makeTableEl(headers, rows){
 
 // ========= Sety + punktacja 2/1 =========
 function parseSets(setsStr){
-  const txt=(setsStr||'').toString().trim(); if (!txt) return {hSets:0,aSets:0,hPts:0,aPts:0};
-  const parts=txt.split(/\s+/); let hSets=0,aSets=0,hPts=0,aPts=0;
+  const txt = (setsStr||'').toString().trim();
+  if (!txt) return {hSets:0,aSets:0,hPts:0,aPts:0};
+
+  // rozdzielamy zarówno przecinkami, jak i spacjami
+  const parts = txt.split(/[, ]+/);
+  let hSets=0, aSets=0, hPts=0, aPts=0;
+
   parts.forEach(p=>{
-    const [h,a]=p.split(':').map(n=>parseInt(n,10));
+    const [h,a] = p.split(':').map(n=>parseInt(n,10));
     if (isNaN(h)||isNaN(a)) return;
-    hPts+=h; aPts+=a;
-    if (h>a) hSets++; else if (a>h) aSets++;
+    hPts += h;
+    aPts += a;
+
+    // dodajemy faktyczne sety
+    if (h > a) hSets++;
+    else if (a > h) aSets++;
   });
+
   return {hSets,aSets,hPts,aPts};
 }
 function matchPointsTwoOne(hSets,aSets){
