@@ -215,16 +215,32 @@ function makeTableEl(headers, rows){
 
 // ========= Sety + punktacja 2/1 =========
 function parseSets(setsStr){
-  const txt=(setsStr||'').toString().trim(); if (!txt) return {hSets:0,aSets:0,hPts:0,aPts:0};
-  const parts=txt.split(/\s+/); let hSets=0,aSets=0,hPts=0,aPts=0;
+  const txt = (setsStr || '').toString().trim();
+  if (!txt) return {hSets:0,aSets:0,hPts:0,aPts:0};
+
+  const parts = txt.split(/\s+/);
+  let hSets=0, aSets=0, hPts=0, aPts=0;
+
   parts.forEach(p=>{
-    const [h,a]=p.split(':').map(n=>parseInt(n,10));
+    const [h,a]=p.split(':').map(Number);
     if (isNaN(h)||isNaN(a)) return;
-    hPts+=h; aPts+=a;
-    if (h>a) hSets++; else if (a>h) aSets++;
+
+    // jeśli to małe punkty (25:17 itp.) → tylko sumuj, ale NIE licz jako set
+    if (h > 30 || a > 30){
+      hPts+=h;
+      aPts+=a;
+      return;
+    }
+
+    hPts+=h;
+    aPts+=a;
+    if (h>a) hSets++;
+    else if (a>h) aSets++;
   });
+
   return {hSets,aSets,hPts,aPts};
 }
+
 function matchPointsTwoOne(hSets,aSets){
   if ((hSets+aSets)===0) return {home:0,away:0};
   if (hSets>aSets) return {home:2,away:1};
@@ -235,7 +251,7 @@ function computeTable(rows){
   const teams={};
   const ensure=n=>teams[n]||(teams[n]={team:n,matches:0,wins:0,losses:0,setsFor:0,setsAgainst:0,smallFor:0,smallAgainst:0,points:0});
   rows.forEach(r=>{
-    const [ , home, away, , setsStr] = r;
+    let setsStr = r[4] || r[3];
     if (!home || !away) return;
     const {hSets,aSets,hPts,aPts}=parseSets(setsStr);
     const {home:hp,away:ap}=matchPointsTwoOne(hSets,aSets);
