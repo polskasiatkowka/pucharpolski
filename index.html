@@ -309,11 +309,10 @@ function generateRanking(matches){
 
 
 function matchPointsTwoOne(hSets, aSets){
-  if(hSets > aSets) return {home:2, away:1};
-  if(aSets > hSets) return {home:1, away:2};
-  return {home:1, away:1}; // opcjonalnie remis
+  if(hSets > aSets) return {home:2, away:1}; // zwycięzca 2 pkt, przegrany 1 pkt
+  if(aSets > hSets) return {home:1, away:2}; // zwycięzca 2 pkt, przegrany 1 pkt
+  return {home:1, away:1}; // opcjonalny remis
 }
-
 // ========= Poprawione computeTable =========
 function computeTable(rows){
   const teams = {};
