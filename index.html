@@ -233,7 +233,6 @@ function matchPointsTwoOne(hSets, aSets){
     return {home:0, away:0}; // teoretycznie nie występuje remis
 }
 
-// ======= Poprawiona funkcja licząca tabelę =======
 function computeTable(rows){
     const teams = {};
     const ensure = (name) => teams[name] || (teams[name] = {
@@ -246,7 +245,7 @@ function computeTable(rows){
         smallFor: 0,
         smallAgainst: 0,
         points: 0
-    });
+    }));
 
     rows.forEach(r => {
         const home = (r[1] || '').toString().trim();
@@ -299,6 +298,7 @@ function computeTable(rows){
 
     return arr;
 }
+
 
 
 // ========= Status/kolory wierszy =========
