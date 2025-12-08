@@ -235,22 +235,17 @@ function matchPointsTwoOne(hSets, aSets){
 
 function computeTable(rows){
     const teams = {};
-    const ensure = (name) => {
-    if (!teams[name]) {
-        teams[name] = {
-            team: name,
-            matches: 0,
-            wins: 0,
-            losses: 0,
-            setsFor: 0,
-            setsAgainst: 0,
-            smallFor: 0,
-            smallAgainst: 0,
-            points: 0
-        };
-    }
-    return teams[name];
-};
+    const ensure = (name) => teams[name] || (teams[name] = {
+        team: name,
+        matches: 0,
+        wins: 0,
+        losses: 0,
+        setsFor: 0,
+        setsAgainst: 0,
+        smallFor: 0,
+        smallAgainst: 0,
+        points: 0
+    }));
 
     rows.forEach(r => {
         const home = (r[1] || '').toString().trim();
@@ -269,11 +264,16 @@ function computeTable(rows){
         const A = ensure(away);
 
         // Sumujemy sety i punkty niezależnie od bycia gospodarzem/ gościem
-        H.setsFor += hSets; H.setsAgainst += aSets;
-        A.setsFor += aSets; A.setsAgainst += hSets;
+        // ✅ Poprawka: dodajemy wszystkie sety wygrane w meczu
+        H.setsFor += hSets;
+        H.setsAgainst += aSets;
+        A.setsFor += aSets;
+        A.setsAgainst += hSets;
 
-        H.smallFor += hPts; H.smallAgainst += aPts;
-        A.smallFor += aPts; A.smallAgainst += hPts;
+        H.smallFor += hPts;
+        H.smallAgainst += aPts;
+        A.smallFor += aPts;
+        A.smallAgainst += hPts;
 
         // Punkty 2/1
         const {home:hp, away:ap} = matchPointsTwoOne(hSets, aSets);
