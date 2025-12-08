@@ -254,7 +254,9 @@ function computeTable(rows) {
         const away = ensure(row.Gość);
 
         // Parsowanie wyniku setów np. "25:11, 19:25, 15:9"
-        const setScores = row.Sety.split(',').map(s => s.trim().split(':').map(Number));
+      const setScores = row.Sety 
+    ? row.Sety.split(',').map(s => s.trim().split(':').map(Number)) 
+    : []; // jeśli brak setów, użyj pustej tablicy
 
         let homeSets = 0;
         let awaySets = 0;
