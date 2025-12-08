@@ -237,17 +237,17 @@ function computeTable(rows) {
     const teams = {};
 
     // Tworzymy obiekt drużyny jeśli jeszcze nie istnieje
-    const ensure = (name) => teams[name] || (teams[name] = {
-        team: name,
-        matches: 0,
-        wins: 0,
-        losses: 0,
-        setsFor: 0,
-        setsAgainst: 0,
-        smallFor: 0,
-        smallAgainst: 0,
-        points: 0
-    }));
+   const ensure = (name) => teams[name] || (teams[name] = {
+    team: name,
+    matches: 0,
+    wins: 0,
+    losses: 0,
+    setsFor: 0,
+    setsAgainst: 0,
+    smallFor: 0,
+    smallAgainst: 0,
+    points: 0
+});
 
     rows.forEach(row => {
         const home = ensure(row.Gospodarz);
