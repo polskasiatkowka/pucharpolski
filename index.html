@@ -235,17 +235,22 @@ function matchPointsTwoOne(hSets, aSets){
 
 function computeTable(rows){
     const teams = {};
-    const ensure = (name) => teams[name] || (teams[name] = {
-        team: name,
-        matches: 0,
-        wins: 0,
-        losses: 0,
-        setsFor: 0,
-        setsAgainst: 0,
-        smallFor: 0,
-        smallAgainst: 0,
-        points: 0
-    }));
+    const ensure = (name) => {
+    if (!teams[name]) {
+        teams[name] = {
+            team: name,
+            matches: 0,
+            wins: 0,
+            losses: 0,
+            setsFor: 0,
+            setsAgainst: 0,
+            smallFor: 0,
+            smallAgainst: 0,
+            points: 0
+        };
+    }
+    return teams[name];
+};
 
     rows.forEach(r => {
         const home = (r[1] || '').toString().trim();
