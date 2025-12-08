@@ -213,193 +213,50 @@ function makeTableEl(headers, rows){
   return wrap;
 }
 
-function parseSets(txt) {
-  if (!txt) return [];
-  const parts = txt.replace(/,/g, ' ').trim().split(/\s+/);
-  return parts.map(s => {
-    const [g, o] = s.split(':').map(Number);
-    return { g, o };
+// ========= Sety + punktacja 2/1 =========
+function parseSets(setsStr){
+  const txt=(setsStr||'').toString().trim(); if (!txt) return {hSets:0,aSets:0,hPts:0,aPts:0};
+  const parts=txt.split(/\s+/); let hSets=0,aSets=0,hPts=0,aPts=0;
+  parts.forEach(p=>{
+    const [h,a]=p.split(':').map(n=>parseInt(n,10));
+    if (isNaN(h)||isNaN(a)) return;
+    hPts+=h; aPts+=a;
+    if (h>a) hSets++; else if (a>h) aSets++;
   });
+  return {hSets,aSets,hPts,aPts};
 }
-
-function calculateResults(sheetData) {
-  // sheetData to np. wynik z read('M_LIGA1')
-  const results = {};
-  
-  sheetData.forEach(row => {
-    const date = row[0];
-    const home = row[1];
-    const away = row[2];
-    const setsTxt = row[4]; // zakładam, że 5-ta kolumna to 'Sety'
-    
-    const sets = parseSets(setsTxt);
-    
-    let homeSets = 0;
-    let awaySets = 0;
-    
-    sets.forEach(({ g, o }) => {
-      if (g > o) homeSets++;
-      else awaySets++;
-    });
-    
-    // zapis wyników w formacie: "homeSets:awaySets"
-    results[home + ' vs ' + away] = homeSets + ':' + awaySets;
-  });
-  
-  return results;
+function matchPointsTwoOne(hSets,aSets){
+  if ((hSets+aSets)===0) return {home:0,away:0};
+  if (hSets>aSets) return {home:2,away:1};
+  if (aSets>hSets) return {home:1,away:2};
+  return {home:0,away:0};
 }
-
-// przykład użycia
-function testResults() {
-  const data = readAll().m_liga1; // pobranie danych z M_LIGA1
-  const res = calculateResults(data);
-  Logger.log(res);
-}
-
-// Funkcja generująca ranking z listy meczów
-function generateRanking(matches){
-  const teams = {};
-
-  matches.forEach(match=>{
-    const {Gospodarz, Gość, Sety} = match;
-    const {hSets, aSets, hPts, aPts} = parseSets(Sety);
-
-    // Inicjalizacja drużyn
-    if(!teams[Gospodarz]) teams[Gospodarz] = {M:0, W:0, P:0, setyH:0, setyA:0, pktH:0, pktA:0};
-    if(!teams[Gość]) teams[Gość] = {M:0, W:0, P:0, setyH:0, setyA:0, pktH:0, pktA:0};
-
-    // Mecze
-    teams[Gospodarz].M++;
-    teams[Gość].M++;
-
-    // Sety
-    teams[Gospodarz].setyH += hSets;
-    teams[Gospodarz].setyA += aSets;
-    teams[Gość].setyH += aSets;
-    teams[Gość].setyA += hSets;
-
-    // Małe punkty
-    teams[Gospodarz].pktH += hPts;
-    teams[Gospodarz].pktA += aPts;
-    teams[Gość].pktH += aPts;
-    teams[Gość].pktA += hPts;
-
-    // Punkty za zwycięstwo (liczone po setach z pojedynczego meczu)
-    if(hSets > aSets){
-      teams[Gospodarz].W++;
-      teams[Gość].P++;
-    } else if(aSets > hSets){
-      teams[Gość].W++;
-      teams[Gospodarz].P++;
+function computeTable(rows){
+  const teams={};
+  const ensure=n=>teams[n]||(teams[n]={team:n,matches:0,wins:0,losses:0,setsFor:0,setsAgainst:0,smallFor:0,smallAgainst:0,points:0});
+  rows.forEach(r=>{
+    const [ , home, away, , setsStr] = r;
+    if (!home || !away) return;
+    const {hSets,aSets,hPts,aPts}=parseSets(setsStr);
+    const {home:hp,away:ap}=matchPointsTwoOne(hSets,aSets);
+    const H=ensure(home), A=ensure(away);
+    if ((hSets+aSets)>0){
+      H.matches++; A.matches++;
+      if (hSets>aSets){ H.wins++; A.losses++; } else if (aSets>hSets){ A.wins++; H.losses++; }
+      H.setsFor+=hSets; H.setsAgainst+=aSets; A.setsFor+=aSets; A.setsAgainst+=hSets;
+      H.smallFor+=hPts; H.smallAgainst+=aPts; A.smallFor+=aPts; A.smallAgainst+=hPts;
+      H.points+=hp; A.points+=ap;
     }
   });
-
-  // Tworzymy ranking w formie tablicy
-  const ranking = Object.keys(teams).map(team=>{
-    const t = teams[team];
-    const setyRatio = `${t.setyH}:${t.setyA}`;
-    const pktRatio = (t.pktH/t.pktA).toFixed(3);
-    const punkty = t.W*1; // punkty za zwycięstwo
-    return {
-      Drużyna: team,
-      M: t.M,
-      W: t.W,
-      P: t.P,
-      'Sety (+/−)': setyRatio,
-      'Małe punkty (ratio)': `${t.pktH}:${t.pktA} (ratio ${pktRatio})`,
-      Punkty: punkty
-    };
-  });
-
-  // Sortowanie: punkty, sety, małe punkty
-  ranking.sort((a,b)=>{
-    if(b.Punkty !== a.Punkty) return b.Punkty - a.Punkty;
-
-    const [bSetH,bSetA] = b['Sety (+/−)'].split(':').map(Number);
-    const [aSetH,aSetA] = a['Sety (+/−)'].split(':').map(Number);
-    const bSetRatio = bSetH/bSetA;
-    const aSetRatio = aSetH/aSetA;
-    if(bSetRatio !== aSetRatio) return bSetRatio - aSetRatio;
-
-    const [bPtsH,bPtsA] = b['Małe punkty (ratio)'].split(' ')[0].split(':').map(Number);
-    const [aPtsH,aPtsA] = a['Małe punkty (ratio)'].split(' ')[0].split(':').map(Number);
-    return (bPtsH/bPtsA) - (aPtsH/aPtsA);
-  });
-
-  return ranking;
-}
-
-
-function matchPointsTwoOne(hSets, aSets){
-  if(hSets > aSets) return {home:2, away:1}; // zwycięzca 2 pkt, przegrany 1 pkt
-  if(aSets > hSets) return {home:1, away:2}; // zwycięzca 2 pkt, przegrany 1 pkt
-  return {home:1, away:1}; // opcjonalny remis
-}
-// ========= Poprawione computeTable =========
-function computeTable(rows){
-  const teams = {};
-
-  // pomocnik: zwraca obiekt drużyny lub tworzy nowy
-  const ensure = name => teams[name] || (teams[name] = {
-    team: name, matches:0, wins:0, losses:0, setsFor:0, setsAgainst:0, smallFor:0, smallAgainst:0, points:0
-  });
-
-  rows.forEach(r=>{
-    const homeName = (r[1]||'').toString().trim();
-    const awayName = (r[2]||'').toString().trim();
-    const setsStr = (r[4]||'').toString().trim();
-
-    if(!homeName || !awayName || !setsStr) return;
-
-    const {hSets, aSets, hPts, aPts} = parseSets(setsStr);
-    if(hSets + aSets === 0) return; // <-- ignorujemy mecze bez setów
-
-    const home = ensure(homeName);
-    const away = ensure(awayName);
-
-    // mecze
-    home.matches++; away.matches++;
-
-    // sety i małe punkty
-    home.setsFor += hSets;
-    home.setsAgainst += aSets;
-    home.smallFor += hPts;
-    home.smallAgainst += aPts;
-
-    away.setsFor += aSets;
-    away.setsAgainst += hSets;
-    away.smallFor += aPts;
-    away.smallAgainst += hPts;
-
-    // punkty meczowe 2/1
-    const {home:hp, away:ap} = matchPointsTwoOne(hSets, aSets);
-    home.points += hp;
-    away.points += ap;
-
-    // zwycięstwa i porażki
-    if(hSets > aSets){ home.wins++; away.losses++; }
-    else if(aSets > hSets){ away.wins++; home.losses++; }
-  });
-
-  // konwertujemy na tablicę do sortowania
-  const arr = Object.values(teams).map(t=>({
-    ...t,
-    setRatio: t.setsAgainst===0 ? (t.setsFor>0 ? Infinity : 0) : t.setsFor / t.setsAgainst,
-    smallDiff: t.smallFor - t.smallAgainst
-  }));
-
-  // sortowanie: punkty, ratio sety, różnica małych punktów, alfabet
+  const arr=Object.values(teams).map(t=>({ ...t, smallDiff:t.smallFor-t.smallAgainst, setRatio: t.setsAgainst===0 ? (t.setsFor>0?Infinity:0) : t.setsFor/t.setsAgainst }));
   arr.sort((a,b)=>{
-    if(b.points !== a.points) return b.points - a.points;
-    if(b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;
-    if(b.smallDiff !== a.smallDiff) return b.smallDiff - a.smallDiff;
+    if (b.points !== a.points) return b.points - a.points;           // duże punkty
+    if (b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;   // ratio sety
+    if (b.smallDiff !== a.smallDiff) return b.smallDiff - a.smallDiff; // ratio małe punkty
     return a.team.localeCompare(b.team,'pl');
-  });
-
+});
   return arr;
 }
-
-
 
 // ========= Status/kolory wierszy =========
 function hasScoreOrSets(score, sets){ const sOk = typeof score==='string' && score.includes(':'); const setsOk = typeof sets==='string' && /\d+:\d+/.test(sets); return sOk || setsOk; }
@@ -744,59 +601,49 @@ function computeCustomTop4(pack, idxA, idxB) {
   return res;
 }
 
-// ========= Poprawione viewLigaF =========
-function viewLigaF(rows){
-  const byLiga = groupByLiga(rows, 5); // kolumna „Liga”
-  const root = document.createElement('div');
-  const order = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
 
-  Object.keys(byLiga).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(l=>{
-    const pack = byLiga[l];
-    if(!pack || pack.length===0) return; // dodatkowy filtr pustych
 
-    const grid = document.createElement('div'); 
-    grid.className='grid';
 
-    const term = renderTermLigaF(`Młodziczka – Liga ${l}`, pack);
-    const rank = renderRanking(`Ranking – Młodziczka – Liga ${l}`, computeTable(pack));
 
-    grid.appendChild(term);
-    grid.appendChild(rank);
-    root.appendChild(grid);
-  });
-
-  if(!root.children.length){
-    root.appendChild(makeCard(`Młodziczka – Liga`, document.createTextNode('Brak danych')));
-  }
-
-  return root;
-}
-
-// ========= Poprawione viewLigaM =========
 function viewLigaM(rows){
   const byLiga = groupByLiga(rows, 5); // kolumna „Liga”
-  const root = document.createElement('div');
-  const order = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
-
+  const root=document.createElement('div');
+  const order=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
   Object.keys(byLiga).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(l=>{
     const pack = byLiga[l];
-    if(!pack || pack.length===0) return;
-
-    const grid = document.createElement('div'); 
-    grid.className='grid';
-
+    const grid=document.createElement('div'); grid.className='grid';
     const term = renderTermLigaM(`Młodzik – Liga ${l}`, pack);
     const rank = renderRanking(`Ranking – Młodzik – Liga ${l}`, computeTable(pack));
-
-    grid.appendChild(term);
-    grid.appendChild(rank);
-    root.appendChild(grid);
+    grid.appendChild(term); grid.appendChild(rank); root.appendChild(grid);
   });
+  if (!root.children.length){ root.appendChild(makeCard(`Młodzik – Liga`, document.createTextNode('Brak danych'))); }
+  return root;
+}
+function viewLigaF(rows){
+  const byLiga = groupByLiga(rows, 5); // kolumna „Liga”
+  const root=document.createElement('div');
+  const order=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
+  Object.keys(byLiga).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).forEach(l=>{
+    const pack = byLiga[l];
+    const grid=document.createElement('div'); grid.className='grid';
+    const term = renderTermLigaF(`Młodziczka – Liga ${l}`, pack);
+    const rank = renderRanking(`Ranking – Młodziczka – Liga ${l}`, computeTable(pack));
+    grid.appendChild(term); grid.appendChild(rank); root.appendChild(grid);
+  });
+  if (!root.children.length){ root.appendChild(makeCard(`Młodziczka – Liga`, document.createTextNode('Brak danych'))); }
+  return root;
+}
+  // ===== Ranking ogólny z 5 kolejek (sumuje wszystkie mecze z arkusza LIGA) =====
+function viewOverall(label, rows){
+  const root = document.createElement('div');
 
-  if(!root.children.length){
-    root.appendChild(makeCard(`Młodzik – Liga`, document.createTextNode('Brak danych')));
-  }
+  // computeTable liczy systemem 2/1 (mamy to już w kodzie)
+  const table = computeTable(rows);
 
+  // gotowy renderer tabeli (bez bonusów, zwykłe M/W/P itd.)
+  const rank = renderRanking(`Ranking ogólny – ${label}`, table);
+
+  root.appendChild(rank);
   return root;
 }
 function renderFinalView(allRows, label){
