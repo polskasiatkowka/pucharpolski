@@ -233,45 +233,47 @@ function matchPointsTwoOne(hSets, aSets){
     return {home:0, away:0}; // teoretycznie nie występuje remis
 }
 
-function computeTable(rows) {
+function computeTable(rows){
     const teams = {};
 
-    // Tworzymy obiekt drużyny jeśli jeszcze nie istnieje
-   const ensure = (name) => teams[name] || (teams[name] = {
-    team: name,
-    matches: 0,
-    wins: 0,
-    losses: 0,
-    setsFor: 0,
-    setsAgainst: 0,
-    smallFor: 0,
-    smallAgainst: 0,
-    points: 0
-});
+    const ensure = (name) => {
+        if (!name) return null; // jeśli brak nazwy, nie twórz wpisu
+        return teams[name] || (teams[name] = {
+            team: name,
+            matches: 0,
+            wins: 0,
+            losses: 0,
+            setsFor: 0,
+            setsAgainst: 0,
+            smallFor: 0,
+            smallAgainst: 0,
+            points: 0
+        }));
+    };
 
     rows.forEach(row => {
+        if (!row.Gospodarz || !row.Gość) return; // pomiń wiersze bez drużyn
+
         const home = ensure(row.Gospodarz);
         const away = ensure(row.Gość);
 
-        // Parsowanie wyniku setów np. "25:11, 19:25, 15:9"
-      const setScores = row.Sety 
-    ? row.Sety.split(',').map(s => s.trim().split(':').map(Number)) 
-    : []; // jeśli brak setów, użyj pustej tablicy
+        if (!home || !away) return; // pomiń, jeśli któryś nie istnieje
 
-        let homeSets = 0;
-        let awaySets = 0;
-        let homeSmall = 0;
-        let awaySmall = 0;
+        // zabezpieczenie dla setów
+        const setScores = row.Sety 
+            ? row.Sety.split(/[\s,]+/).map(s => s.trim().split(':').map(Number)) 
+            : [];
+
+        if (setScores.length === 0) return; // pomiń mecze bez setów
+
+        let homeSets = 0, awaySets = 0, homePoints = 0, awayPoints = 0;
 
         setScores.forEach(([h, a]) => {
-            if (h > a) homeSets++;
-            else awaySets++;
-
-            homeSmall += h;
-            awaySmall += a;
+            homePoints += h;
+            awayPoints += a;
+            if (h > a) homeSets++; else awaySets++;
         });
 
-        // Aktualizacja statystyk
         home.matches++;
         away.matches++;
 
@@ -280,16 +282,16 @@ function computeTable(rows) {
         away.setsFor += awaySets;
         away.setsAgainst += homeSets;
 
-        home.smallFor += homeSmall;
-        home.smallAgainst += awaySmall;
-        away.smallFor += awaySmall;
-        away.smallAgainst += homeSmall;
+        home.smallFor += homePoints;
+        home.smallAgainst += awayPoints;
+        away.smallFor += awayPoints;
+        away.smallAgainst += homePoints;
 
         if (homeSets > awaySets) {
             home.wins++;
             away.losses++;
-            home.points += 2; // za wygraną meczową
-            away.points += 1; // za przegraną
+            home.points += 2;
+            away.points += 1;
         } else {
             away.wins++;
             home.losses++;
@@ -298,10 +300,8 @@ function computeTable(rows) {
         }
     });
 
-    // Zamiana obiektu na tablicę i sortowanie
-    return Object.values(teams).sort((a, b) => b.points - a.points || (b.setsFor/b.setsAgainst) - (a.setsFor/a.setsAgainst));
+    return Object.values(teams);
 }
-
 
 
 // ========= Status/kolory wierszy =========
