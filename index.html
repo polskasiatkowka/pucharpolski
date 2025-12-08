@@ -214,25 +214,99 @@ function makeTableEl(headers, rows){
 }
 
 // ========= Sety + punktacja 2/1 =========
+// Funkcja licząca sety i punkty dla pojedynczego meczu
 function parseSets(setsStr){
   const txt = (setsStr||'').toString().trim();
   if (!txt) return {hSets:0, aSets:0, hPts:0, aPts:0};
 
-  // Rozdzielamy po przecinku i/lub spacji
-  const parts = txt.split(/[\s,]+/); 
+  const parts = txt.split(/[\s,]+/); // dzielimy po spacji lub przecinku
   let hSets=0, aSets=0, hPts=0, aPts=0;
 
   parts.forEach(p=>{
     const [h,a] = p.split(':').map(n=>parseInt(n,10));
-    if (isNaN(h)||isNaN(a)) return;
-    hPts += h; 
+    if(isNaN(h)||isNaN(a)) return;
+    hPts += h;
     aPts += a;
-    if (h > a) hSets++; 
-    else if (a > h) aSets++;
+    if(h > a) hSets++;
+    else if(a > h) aSets++;
   });
 
-  return {hSets,aSets,hPts,aPts};
+  return {hSets, aSets, hPts, aPts};
 }
+
+// Funkcja generująca ranking z listy meczów
+function generateRanking(matches){
+  const teams = {};
+
+  matches.forEach(match=>{
+    const {Gospodarz, Gość, Sety} = match;
+    const {hSets, aSets, hPts, aPts} = parseSets(Sety);
+
+    // Inicjalizacja drużyn
+    if(!teams[Gospodarz]) teams[Gospodarz] = {M:0, W:0, P:0, setyH:0, setyA:0, pktH:0, pktA:0};
+    if(!teams[Gość]) teams[Gość] = {M:0, W:0, P:0, setyH:0, setyA:0, pktH:0, pktA:0};
+
+    // Mecze
+    teams[Gospodarz].M++;
+    teams[Gość].M++;
+
+    // Sety
+    teams[Gospodarz].setyH += hSets;
+    teams[Gospodarz].setyA += aSets;
+    teams[Gość].setyH += aSets;
+    teams[Gość].setyA += hSets;
+
+    // Małe punkty
+    teams[Gospodarz].pktH += hPts;
+    teams[Gospodarz].pktA += aPts;
+    teams[Gość].pktH += aPts;
+    teams[Gość].pktA += hPts;
+
+    // Punkty za zwycięstwo (liczone po setach z pojedynczego meczu)
+    if(hSets > aSets){
+      teams[Gospodarz].W++;
+      teams[Gość].P++;
+    } else if(aSets > hSets){
+      teams[Gość].W++;
+      teams[Gospodarz].P++;
+    }
+  });
+
+  // Tworzymy ranking w formie tablicy
+  const ranking = Object.keys(teams).map(team=>{
+    const t = teams[team];
+    const setyRatio = `${t.setyH}:${t.setyA}`;
+    const pktRatio = (t.pktH/t.pktA).toFixed(3);
+    const punkty = t.W*1; // punkty za zwycięstwo
+    return {
+      Drużyna: team,
+      M: t.M,
+      W: t.W,
+      P: t.P,
+      'Sety (+/−)': setyRatio,
+      'Małe punkty (ratio)': `${t.pktH}:${t.pktA} (ratio ${pktRatio})`,
+      Punkty: punkty
+    };
+  });
+
+  // Sortowanie: punkty, sety, małe punkty
+  ranking.sort((a,b)=>{
+    if(b.Punkty !== a.Punkty) return b.Punkty - a.Punkty;
+
+    const [bSetH,bSetA] = b['Sety (+/−)'].split(':').map(Number);
+    const [aSetH,aSetA] = a['Sety (+/−)'].split(':').map(Number);
+    const bSetRatio = bSetH/bSetA;
+    const aSetRatio = aSetH/aSetA;
+    if(bSetRatio !== aSetRatio) return bSetRatio - aSetRatio;
+
+    const [bPtsH,bPtsA] = b['Małe punkty (ratio)'].split(' ')[0].split(':').map(Number);
+    const [aPtsH,aPtsA] = a['Małe punkty (ratio)'].split(' ')[0].split(':').map(Number);
+    return (bPtsH/bPtsA) - (aPtsH/aPtsA);
+  });
+
+  return ranking;
+}
+
 
 function matchPointsTwoOne(hSets,aSets){
   if (hSets + aSets === 0) return {home:0, away:0};
