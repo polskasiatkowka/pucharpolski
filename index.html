@@ -233,11 +233,11 @@ function matchPointsTwoOne(hSets, aSets){
     return {home:0, away:0}; // teoretycznie nie występuje remis
 }
 
-function computeTable(rows){
+function computeTable(rows) {
     const teams = {};
 
     const ensure = (name) => {
-        if (!name) return null; // jeśli brak nazwy, nie twórz wpisu
+        if (!name) return null;
         return teams[name] || (teams[name] = {
             team: name,
             matches: 0,
@@ -248,23 +248,22 @@ function computeTable(rows){
             smallFor: 0,
             smallAgainst: 0,
             points: 0
-        }));
+        });
     };
 
     rows.forEach(row => {
-        if (!row.Gospodarz || !row.Gość) return; // pomiń wiersze bez drużyn
+        if (!row.Gospodarz || !row.Gość) return;
 
         const home = ensure(row.Gospodarz);
         const away = ensure(row.Gość);
 
-        if (!home || !away) return; // pomiń, jeśli któryś nie istnieje
+        if (!home || !away) return;
 
-        // zabezpieczenie dla setów
-        const setScores = row.Sety 
-            ? row.Sety.split(/[\s,]+/).map(s => s.trim().split(':').map(Number)) 
+        const setScores = row.Sety
+            ? row.Sety.split(/[\s,]+/).map(s => s.trim().split(':').map(Number))
             : [];
 
-        if (setScores.length === 0) return; // pomiń mecze bez setów
+        if (setScores.length === 0) return;
 
         let homeSets = 0, awaySets = 0, homePoints = 0, awayPoints = 0;
 
