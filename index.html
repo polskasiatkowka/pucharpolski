@@ -233,69 +233,73 @@ function matchPointsTwoOne(hSets, aSets){
     return {home:0, away:0}; // teoretycznie nie występuje remis
 }
 
-function computeTable(rows){
+function computeTable(rows) {
     const teams = {};
-    function ensure(name){
-        if (!teams[name]){
-            teams[name] = {
-                team: name,
-                matches: 0,
-                wins: 0,
-                losses: 0,
-                setsFor: 0,
-                setsAgainst: 0,
-                smallFor: 0,
-                smallAgainst: 0,
-                points: 0
-            };
-        }
-        return teams[name];
-    }
 
-    rows.forEach(r => {
-        const home = (r[1] || '').toString().trim();
-        const away = (r[2] || '').toString().trim();
-        const setsStr = (r[4] || '').toString().trim();
-
-        if (!home || !away || !setsStr) return;
-
-        // Parsujemy sety
-        const {hSets, aSets, hPts, aPts} = parseSets(setsStr);
-
-        if ((hSets + aSets) === 0) return; // brak rozegranych setów
-
-        const H = ensure(home);
-        const A = ensure(away);
-
-        H.setsFor += hSets; H.setsAgainst += aSets;
-        A.setsFor += aSets; A.setsAgainst += hSets;
-
-        H.smallFor += hPts; H.smallAgainst += aPts;
-        A.smallFor += aPts; A.smallAgainst += hPts;
-
-        const {home:hp, away:ap} = matchPointsTwoOne(hSets, aSets);
-        H.points += hp; A.points += ap;
-
-        H.matches++; A.matches++;
-        if (hSets > aSets){ H.wins++; A.losses++; }
-        else if (aSets > hSets){ A.wins++; H.losses++; }
-    });
-
-    const arr = Object.values(teams).map(t => ({
-        ...t,
-        smallDiff: t.smallFor - t.smallAgainst,
-        setRatio: t.setsAgainst === 0 ? (t.setsFor > 0 ? Infinity : 0) : t.setsFor / t.setsAgainst
+    // Tworzymy obiekt drużyny jeśli jeszcze nie istnieje
+    const ensure = (name) => teams[name] || (teams[name] = {
+        team: name,
+        matches: 0,
+        wins: 0,
+        losses: 0,
+        setsFor: 0,
+        setsAgainst: 0,
+        smallFor: 0,
+        smallAgainst: 0,
+        points: 0
     }));
 
-    arr.sort((a,b) => {
-        if (b.points !== a.points) return b.points - a.points;
-        if (b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;
-        if (b.smallDiff !== a.smallDiff) return b.smallDiff - a.smallDiff;
-        return a.team.localeCompare(b.team,'pl');
+    rows.forEach(row => {
+        const home = ensure(row.Gospodarz);
+        const away = ensure(row.Gość);
+
+        // Parsowanie wyniku setów np. "25:11, 19:25, 15:9"
+        const setScores = row.Sety.split(',').map(s => s.trim().split(':').map(Number));
+
+        let homeSets = 0;
+        let awaySets = 0;
+        let homeSmall = 0;
+        let awaySmall = 0;
+
+        setScores.forEach(([h, a]) => {
+            if (h > a) homeSets++;
+            else awaySets++;
+
+            homeSmall += h;
+            awaySmall += a;
+        });
+
+        // Aktualizacja statystyk
+        home.matches++;
+        away.matches++;
+
+        home.setsFor += homeSets;
+        home.setsAgainst += awaySets;
+        away.setsFor += awaySets;
+        away.setsAgainst += homeSets;
+
+        home.smallFor += homeSmall;
+        home.smallAgainst += awaySmall;
+        away.smallFor += awaySmall;
+        away.smallAgainst += homeSmall;
+
+        if (homeSets > awaySets) {
+            home.wins++;
+            away.losses++;
+            home.points += 2; // za wygraną meczową
+            away.points += 1; // za przegraną
+        } else {
+            away.wins++;
+            home.losses++;
+            away.points += 2;
+            home.points += 1;
+        }
     });
 
-    return arr;
+    // Zamiana obiektu na tablicę i sortowanie
+    return Object.values(teams).sort((a, b) => b.points - a.points || (b.setsFor/b.setsAgainst) - (a.setsFor/a.setsAgainst));
 }
+
 
 
 // ========= Status/kolory wierszy =========
