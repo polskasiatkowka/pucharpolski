@@ -216,45 +216,46 @@ function makeTableEl(headers, rows){
 // ========= Sety + punktacja 2/1 =========
 function parseSets(setsStr){
   const txt = (setsStr||'').toString().trim();
-  if (!txt) return {hSets:0, aSets:0, hPts:0, aPts:0};
-  const parts = txt.split(/[\s,]+/); // dzieli po spacji i przecinku
+  if (!txt) return {hSets:0,aSets:0,hPts:0,aPts:0};
+  const parts = txt.split(/\s+/); 
   let hSets=0, aSets=0, hPts=0, aPts=0;
   parts.forEach(p=>{
     const [h,a] = p.split(':').map(n=>parseInt(n,10));
     if (isNaN(h) || isNaN(a)) return;
-    hPts += h; aPts += a;
-    if (h > a) hSets++; else if (a > h) aSets++;
+    hPts += h;
+    aPts += a;
+    if (h > a) hSets++; 
+    else if (a > h) aSets++;
   });
   return {hSets,aSets,hPts,aPts};
 }
 
 function matchPointsTwoOne(hSets,aSets){
-  // przy remisie lub brakach setów 0:0 punkty 0:0
-  if ((hSets+aSets) === 0) return {home:0,away:0};
+  if (hSets + aSets === 0) return {home:0, away:0};
   if (hSets > aSets) return {home:2, away:1};
   if (aSets > hSets) return {home:1, away:2};
   return {home:0, away:0};
 }
 
 function computeTable(rows){
-  const teams={};
+  const teams = {};
   const ensure = n => teams[n] || (teams[n] = {
-    team: n, matches:0, wins:0, losses:0,
-    setsFor:0, setsAgainst:0, smallFor:0, smallAgainst:0, points:0
+    team: n, matches:0, wins:0, losses:0, setsFor:0, setsAgainst:0, smallFor:0, smallAgainst:0, points:0
   });
 
- rows.forEach(r=>{
-  const [ , home, away, , setsStr] = r;
-  if (!home || !away) return;
-  const {hSets,aSets,hPts,aPts} = parseSets(setsStr);
-  const {home:hp,away:ap} = matchPointsTwoOne(hSets,aSets); // tylko punkty
-  const H = ensure(home), A = ensure(away);
-  if ((hSets+aSets) > 0){
-    H.matches++; A.matches++;
-    if (hSets > aSets){ H.wins++; A.losses++; }
-    else if (aSets > hSets){ A.wins++; H.losses++; }
+  rows.forEach(r=>{
+    const [ , home, away, , setsStr] = r;
+    if (!home || !away) return;
+    const {hSets, aSets, hPts, aPts} = parseSets(setsStr);
+    if (hSets + aSets === 0) return; // mecz bez setów – ignoruj
+    const {home:hp, away:ap} = matchPointsTwoOne(hSets, aSets);
+    const H = ensure(home), A = ensure(away);
 
-    // używamy prawdziwych setów z parseSets
+    // Aktualizacja statystyk
+    H.matches++; A.matches++;
+    if (hSets > aSets) { H.wins++; A.losses++; }
+    else if (aSets > hSets) { A.wins++; H.losses++; }
+
     H.setsFor += hSets; H.setsAgainst += aSets;
     A.setsFor += aSets; A.setsAgainst += hSets;
 
@@ -262,20 +263,21 @@ function computeTable(rows){
     A.smallFor += aPts; A.smallAgainst += hPts;
 
     H.points += hp; A.points += ap;
-  }
-});
+  });
 
+  // Tworzymy tablicę do sortowania
   const arr = Object.values(teams).map(t=>({
     ...t,
     smallDiff: t.smallFor - t.smallAgainst,
-    setRatio: t.setsAgainst === 0 ? (t.setsFor>0 ? Infinity : 0) : t.setsFor / t.setsAgainst
+    setRatio: t.setsAgainst===0 ? (t.setsFor>0 ? Infinity : 0) : t.setsFor / t.setsAgainst
   }));
 
+  // Sortowanie
   arr.sort((a,b)=>{
-    if (b.points !== a.points) return b.points - a.points;
-    if (b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;
-    if (b.smallDiff !== a.smallDiff) return b.smallDiff - a.smallDiff;
-    return a.team.localeCompare(b.team,'pl');
+    if (b.points !== a.points) return b.points - a.points;               // duże punkty
+    if (b.setRatio !== a.setRatio) return b.setRatio - a.setRatio;       // ratio sety
+    if (b.smallDiff !== a.smallDiff) return b.smallDiff - a.smallDiff;  // małe punkty
+    return a.team.localeCompare(b.team,'pl');                             // alfabet
   });
 
   return arr;
