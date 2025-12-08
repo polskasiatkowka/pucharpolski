@@ -222,20 +222,22 @@ function parseSets(setsStr){
   let hSets=0, aSets=0, hPts=0, aPts=0;
 
   parts.forEach(p=>{
-    const [h,a]=p.split(':').map(Number);
-    if (isNaN(h)||isNaN(a)) return;
+    const [h,a] = p.split(':').map(Number);
+    if (isNaN(h) || isNaN(a)) return;
 
-    // jeśli to małe punkty (25:17 itp.) → tylko sumuj, ale NIE licz jako set
-    if (h > 30 || a > 30){
-      hPts+=h;
-      aPts+=a;
+    // Jeśli wartości większe niż 3 → to MAŁE PUNKTY, nie SETY
+    if (h > 3 || a > 3){
+      hPts += h;
+      aPts += a;
       return;
     }
 
-    hPts+=h;
-    aPts+=a;
-    if (h>a) hSets++;
-    else if (a>h) aSets++;
+    // Jeśli 0–3 → to SĄ SETY
+    hPts += h;
+    aPts += a;
+
+    if (h > a) hSets++;
+    else if (a > h) aSets++;
   });
 
   return {hSets,aSets,hPts,aPts};
