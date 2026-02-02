@@ -175,9 +175,8 @@ tr.qualify td{
 <script>
 // ========= KONFIG =========
 // jeśli masz CORS ok na Apps Script, możesz użyć bezpośrednio WEB_APP_URL_BASE + "?action=get"
-const WEB_APP_URL =
-  "https://script.google.com/macros/s/AKfycbw_8xO_wrwBCzD6YzwV0rSIiXZ9JQxlvy5CYlEH4AxWICOm53Sukp60PH-Y3YeYXAjE/exec?action=get&cb=" + Date.now();
-
+const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbwPRK1scLDtE-o0tRWE1lO7kZ29T09qzlPwolsmDEgO2f-Xyl8XWMomWeSu4elE3JFW/exec";
+const WEB_APP_URL = "https://corsproxy.io/?" + encodeURIComponent(WEB_APP_URL_BASE + "?action=get&cb=" + Date.now());
 
 // ========= Utils =========
 function isUrl(v){ try{ const u = new URL((v||'').trim()); return /^https?:$/.test(u.protocol); }catch(e){ return false; } }
