@@ -759,7 +759,8 @@ window.boot = async function boot() {
     if (loader) loader.style.display = 'none';
 
     renderView('m_roz1');
-
+    setupDropdowns();
+    setupTabs();
   } 
   catch(err) {
     console.error('Błąd ładowania danych:', err);
@@ -836,6 +837,18 @@ document.addEventListener('DOMContentLoaded', () => {
       boot();
     }
   });
+  function setupTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.dataset.view; // np. 'm_overall', 'f_overall', 'm_final'
+      renderView(view);
+
+      // podświetlenie aktywnej zakładki
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+}
 </script>
 </body>
 </html>
