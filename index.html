@@ -749,27 +749,27 @@ function renderView(kind){
 // ========= Start =========
 async function boot() {
   try {
+    // pobierz dane z Apps Script przez allOrigins (CORS safe)
     const res = await fetch(WEB_APP_URL, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    DATA = await res.json();          // ← globalne DATA
-    console.log(DATA);
 
-    // Render widoku domyślnego po załadowaniu danych
-    renderView('m_roz1');
+    // przypisz globalnie, żeby inne funkcje mogły korzystać
+    DATA = await res.json();
+    console.log('Dane załadowane:', DATA);
 
-    // Setup dropdownów
-    setupDropdowns();
-
-    // Ukryj ekran ładowania
+    // ukryj ekran ładowania (jeśli masz loader)
     const loader = document.getElementById('loading-screen');
     if (loader) loader.style.display = 'none';
+
+    // render widoku startowego
+    renderView('m_roz1');
+
   } catch(err) {
-    console.error('Błąd podczas ładowania danych:', err);
+    console.error('Błąd ładowania danych:', err);
     const loader = document.getElementById('loading-screen');
-    if (loader) loader.innerHTML = '<p style="color:red">Błąd ładowania danych. Spróbuj odświeżyć stronę.</p>';
+    if (loader) loader.innerHTML = `<p style="color:red;">Błąd ładowania danych: ${err.message}</p>`;
   }
 }
-
   // wybrane rundy (jeśli jeszcze nie masz)
 
 // toggle dropdownów
