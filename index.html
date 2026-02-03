@@ -176,7 +176,8 @@ tr.qualify td{
 // ========= KONFIG =========
 // jeśli masz CORS ok na Apps Script, możesz użyć bezpośrednio WEB_APP_URL_BASE + "?action=get"
 const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbyecDAie4hYxMU22EbTo-JRq2HXe32VeT8B6Y5Oy_hstLxgQ9pFLWXqzBrWTjiTIAaa/exec";
-const WEB_APP_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(WEB_APP_URL_BASE + "?action=get&cb=" + Date.now());
+const WEB_APP_URL = WEB_APP_URL_BASE + "?action=get&cb=" + Date.now();
+
 // ========= Utils =========
 function isUrl(v){ try{ const u = new URL((v||'').trim()); return /^https?:$/.test(u.protocol); }catch(e){ return false; } }
 function parseDateAny(v){
@@ -750,15 +751,24 @@ async function boot() {
   try {
     const res = await fetch(WEB_APP_URL, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const DATA = await res.json();
-    console.log(DATA); // test
-    // tu dalej renderujesz widok
+    DATA = await res.json();          // ← globalne DATA
+    console.log(DATA);
+
+    // Render widoku domyślnego po załadowaniu danych
+    renderView('m_roz1');
+
+    // Setup dropdownów
+    setupDropdowns();
+
+    // Ukryj ekran ładowania
+    const loader = document.getElementById('loading-screen');
+    if (loader) loader.style.display = 'none';
   } catch(err) {
-    console.error('Błąd:', err);
+    console.error('Błąd podczas ładowania danych:', err);
+    const loader = document.getElementById('loading-screen');
+    if (loader) loader.innerHTML = '<p style="color:red">Błąd ładowania danych. Spróbuj odświeżyć stronę.</p>';
   }
 }
-
-boot();
 
   // wybrane rundy (jeśli jeszcze nie masz)
 
