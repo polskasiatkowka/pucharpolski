@@ -770,14 +770,7 @@ window.boot = async function boot() {
 document.addEventListener('DOMContentLoaded', () => {
   boot();
 });
-  catch(err) {
-    console.error('Błąd ładowania danych:', err);
-    const loader = document.getElementById('loading-screen');
-    if (loader) loader.innerHTML = `<p style="color:red;">Błąd ładowania danych: ${err.message}</p>`;
-  }
-}
-  // wybrane rundy (jeśli jeszcze nie masz)
-
+ 
 // toggle dropdownów
 function setupDropdowns(){
   // otwieranie/zamykanie
