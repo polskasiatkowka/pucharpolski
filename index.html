@@ -176,7 +176,7 @@ tr.qualify td{
 // ========= KONFIG =========
 // jeśli masz CORS ok na Apps Script, możesz użyć bezpośrednio WEB_APP_URL_BASE + "?action=get"
 const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbyecDAie4hYxMU22EbTo-JRq2HXe32VeT8B6Y5Oy_hstLxgQ9pFLWXqzBrWTjiTIAaa/exec";
-const WEB_APP_URL = "https://corsproxy.io/?" + encodeURIComponent(WEB_APP_URL_BASE + "?action=get&cb=" + Date.now());
+const WEB_APP_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(WEB_APP_URL_BASE + "?action=get&cb=" + Date.now());
 // ========= Utils =========
 function isUrl(v){ try{ const u = new URL((v||'').trim()); return /^https?:$/.test(u.protocol); }catch(e){ return false; } }
 function parseDateAny(v){
