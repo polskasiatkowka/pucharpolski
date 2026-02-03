@@ -753,11 +753,18 @@ async function boot(){
     if (!res.ok) throw new Error('HTTP '+res.status);
     DATA = await res.json();
   }catch(err){
-    const mount=document.getElementById('view');
-    const card = makeCard('Błąd', document.createTextNode('Nie udało się pobrać danych z Apps Script.\nSzczegóły: '+err));
-    mount.appendChild(card);
-    return;
-  }
+  document.getElementById('loading-screen').style.display = 'none';
+
+  const mount = document.getElementById('view');
+  const card = makeCard(
+    'Błąd',
+    document.createTextNode(
+      'Nie udało się pobrać danych z Apps Script.\nSzczegóły: ' + err
+    )
+  );
+  mount.appendChild(card);
+  return;
+}
   document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{ setActive(btn); renderView(btn.dataset.view); });
   });
