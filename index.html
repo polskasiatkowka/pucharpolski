@@ -175,9 +175,8 @@ tr.qualify td{
 <script>
 // ========= KONFIG =========
 // jeśli masz CORS ok na Apps Script, możesz użyć bezpośrednio WEB_APP_URL_BASE + "?action=get"
-const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbxt1B18KlqmuGrtszbNNH_mofuVEdmHA-MIXelRerIbOqTlMCYeDN2IZnLMAuT4Zknl/exec";
-const WEB_APP_URL = WEB_APP_URL_BASE + "?action=get&cb=" + Date.now();
-
+const WEB_APP_URL_BASE = "https://script.google.com/macros/s/AKfycbyecDAie4hYxMU22EbTo-JRq2HXe32VeT8B6Y5Oy_hstLxgQ9pFLWXqzBrWTjiTIAaa/exec";
+const WEB_APP_URL = "https://corsproxy.io/?" + encodeURIComponent(WEB_APP_URL_BASE + "?action=get&cb=" + Date.now());
 // ========= Utils =========
 function isUrl(v){ try{ const u = new URL((v||'').trim()); return /^https?:$/.test(u.protocol); }catch(e){ return false; } }
 function parseDateAny(v){
@@ -747,32 +746,18 @@ function renderView(kind){
 }
 
 // ========= Start =========
-async function boot(){
-  try{
-    const res = await fetch(WEB_APP_URL, {cache:'no-store'});
-    if (!res.ok) throw new Error('HTTP '+res.status);
-    DATA = await res.json();
-  }catch(err){
-  document.getElementById('loading-screen').style.display = 'none';
-
-  const mount = document.getElementById('view');
-  const card = makeCard(
-    'Błąd',
-    document.createTextNode(
-      'Nie udało się pobrać danych z Apps Script.\nSzczegóły: ' + err
-    )
-  );
-  mount.appendChild(card);
-  return;
+async function boot() {
+  try {
+    const res = await fetch(WEB_APP_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const DATA = await res.json();
+    console.log(DATA); // test
+    // tu dalej renderujesz widok
+  } catch(err) {
+    console.error('Błąd:', err);
+  }
 }
-  document.querySelectorAll('.tab-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{ setActive(btn); renderView(btn.dataset.view); });
-  });
-  renderView('m_roz1'); // domyślnie
 
-  // 🔽 schowaj ekran ładowania
-  document.getElementById('loading-screen').style.display = 'none';
-}
 boot();
 
   // wybrane rundy (jeśli jeszcze nie masz)
