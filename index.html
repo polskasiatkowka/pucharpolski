@@ -421,33 +421,30 @@ function renderRanking(title, tableRows, opts = {}) {
         t.points
       ];
     });
-  } else {
-    headers = [
-      'Miejsce','Drużyna','M','W','P',
-      'Sety (+/−)','Małe punkty (ratio)',
-      'Punkty meczowe','Klasyfikacyjne','Razem'
+ } else {
+  headers = [
+    'Miejsce','Drużyna','M','W','P',
+    'Sety (+/−)','Małe punkty (ratio)',
+    'Punkty'
+  ];
+
+  rows = tableRows.map((t, idx) => {
+    const ratio = t.smallAgainst > 0
+      ? (t.smallFor / t.smallAgainst).toFixed(3)
+      : '∞';
+
+    return [
+      idx + 1,
+      t.team,
+      t.matches,
+      t.wins,
+      t.losses,
+      `${t.setsFor}:${t.setsAgainst}`,
+      `${t.smallFor}:${t.smallAgainst} (ratio ${ratio})`,
+      t.points
     ];
-    rows = tableRows.map((t, idx) => {
-      const ratio = t.smallAgainst > 0
-        ? (t.smallFor / t.smallAgainst).toFixed(3)
-        : '∞';
-      const place = idx + 1;
-      const bonus = classificationBonus(place, maxBonus);
-      const total = t.points + bonus;
-      return [
-        place,
-        t.team,
-        t.matches,
-        t.wins,
-        t.losses,
-        `${t.setsFor}:${t.setsAgainst}`,
-        `${t.smallFor}:${t.smallAgainst} (ratio ${ratio})`,
-        t.points,
-        bonus,
-        total
-      ];
-    });
-  }
+  });
+}
 
   return makeCard(title, makeTableEl(headers, rows));
 }
