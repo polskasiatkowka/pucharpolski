@@ -652,16 +652,47 @@ function viewOverall(label, rows){
   root.appendChild(rank);
   return root;
 }
+  function splitByGroup(rows, groupIndex = 5) {
+  const out = {};
+  rows.forEach(r => {
+    const g = normRoman(r[groupIndex] || '');
+    if (!g) return;
+    (out[g] ||= []).push(r);
+  });
+  return out;
+}
 function renderFinalView(allRows, label){
   const view = document.createElement('div');
-  const grid = document.createElement('div'); grid.className='grid';
-  const term = renderTermFinal(`${label} – Finał`, allRows);
-  const table = computeTable(allRows);
-  const kind = (label==='Młodzik') ? 'mlodzik' : (label==='Młodziczka' ? 'mlodziczka' : undefined);
-  const rank = kind ? renderRanking(`Ranking – ${label} – Finał`, table, { final:true, kind }) : renderRanking(`Ranking – ${label} – Finał`, table);
-  grid.appendChild(term); grid.appendChild(rank); view.appendChild(grid);
+  const groups = splitByGroup(allRows, 5); // kolumna „Grupa”
+
+  const order = ['A','B','F']; // kolejność wyświetlania
+
+  order.forEach(g => {
+    if (!groups[g] || !groups[g].length) return;
+
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+
+    const titleSuffix = (g === 'F') ? 'Finał' : `Grupa ${g}`;
+
+    const term = renderTermFinal(`${label} – ${titleSuffix}`, groups[g]);
+    const table = computeTable(groups[g]);
+    const rank = renderRanking(`Ranking – ${label} – ${titleSuffix}`, table);
+
+    grid.appendChild(term);
+    grid.appendChild(rank);
+    view.appendChild(grid);
+  });
+
+  if (!view.children.length) {
+    view.appendChild(
+      makeCard(`${label} – Finał`, document.createTextNode('Brak danych'))
+    );
+  }
+
   return view;
 }
+
 function viewOverallManual(label, rows){
   // rows = [Drużyna, T1, T2, T3, T4, T5]
   const normalized = rows.map(r=>{
