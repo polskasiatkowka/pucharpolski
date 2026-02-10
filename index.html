@@ -343,7 +343,16 @@ function renderTermRozstaw(title, rows){
       const dateCell={__html:`<span data-rowcls="${st.rowCls||''}">${fmtPL(r[0])}</span>`};
       const proto = isUrl(r[7]) ? {__html:`<a href="${r[7]}" target="_blank" rel="noopener">📄 protokół</a>`} : '—';
       const badge = st.cls ? {__html:`<span class="chip ${st.cls}">${st.text}</span>`} : st.text;
-      return [dateCell, r[1], r[2], r[3]||'', r[4]||'', r[5]||'', r[6]||'', badge, proto];
+     return [
+  dateCell,
+  r[1],
+  r[2],
+  r[3] || '',
+  r[4] || '',
+  r[5] || '',   // <-- Grupa
+  badge,
+  proto
+];
     });
   return makeCard(title, makeTableEl(headers, mapped));
 }
@@ -374,7 +383,7 @@ function renderTermLigaF(title, rows){
   return makeCard(title, makeTableEl(headers, mapped));
 }
 function renderTermFinal(title, rows){
-  const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Status','Protokół'];
+  const headers = ['Data','Gospodarz','Gość','Wynik','Sety','Status','Grupa','Protokół'];
   const mapped = rows.slice()
     .sort((a,b)=> (parseDateAny(a[0])?.getTime()||0) - (parseDateAny(b[0])?.getTime()||0))
     .map(r=>{
