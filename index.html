@@ -665,15 +665,24 @@ function renderFinalView(allRows, label){
   const view = document.createElement('div');
   const groups = splitByGroup(allRows, 5); // kolumna „Grupa”
 
-  const order = ['A','B','F']; // kolejność wyświetlania
+  const order = ['A','B','5','F']; // kolejność wyświetlania
 
+  const labels = {
+  A: 'Grupa A',
+  B: 'Grupa B',
+  F: 'Finał',
+  '5': 'Mecz o 5. miejsce'
+};
   order.forEach(g => {
     if (!groups[g] || !groups[g].length) return;
 
     const grid = document.createElement('div');
     grid.className = 'grid';
 
-    const titleSuffix = (g === 'F') ? 'Finał' : `Grupa ${g}`;
+   const titleSuffix =
+  g === 'F' ? 'Finał' :
+  g === '5' ? 'Mecz o 5. miejsce' :
+  `Grupa ${g}`;
 
     const term = renderTermFinal(`${label} – ${titleSuffix}`, groups[g]);
     const table = computeTable(groups[g]);
